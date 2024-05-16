@@ -1,0 +1,32 @@
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位，2em即现在一个字大小的两倍*/
+    }
+</style>
+
+
+<h2>查询错误码的文件</h2>
+
+<pre>
+        /usr/include/asm-generic/errno-base.h    
+        /usr/include/asm-generic/errno.h    
+</pre>
+
+<h2>函数使用</h2>
+
+<pre>
+        #include <stdio.h>  
+        #include <string.h>  
+        #include <errno.h>  
+            
+        int main(int argc, char* argv[])  
+        {  
+            FILE *fp;  
+            if ((fp = fopen(argv[1], "r")) == NULL)  
+            {  
+                perror("perror:");  
+                printf("strerror:%s\n", strerror(errno));  
+            }  
+            return 0;  
+        } 
+</pre>

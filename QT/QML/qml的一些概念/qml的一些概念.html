@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>qml的一些概念.qml</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>qml代码中关键字很多,涉及到的概念也很多,遇到了,这里就简单记录一下,具体的讲解可以看qt-helper</p>
+
+<p>可以使用qmlscene来执行qml,显示界面样式</p>
+
+
+<h1>关键字</h1>
+
+<p><b>MouseArea : </b></p>
+
+<p><b>Item : </b></p>
+
+<p><b>ParallelAnimation : </b></p>
+
+<p><b>SequentialAnimation : </b></p>
+
+<p><b>property alias : </b></p>
+
+<hr>
+
+<h1>概念</h1>
+
+<p><b>Anchor-Based Layout : </b>anchors可以理解为锚,quick提供了锚定位系统。我的理解就是可以通过一些方位,比如left、top、right、bottom、verticalCenter、horizontalCenter这样的属性去描述两个控件间的位置,使用上是方便了一些。当然锚定系统也加入了边距和偏移量,否则这个系统就太简单了。边距是指控件与锚点的距离,偏移量是指verticalCenter和horizontalCenter的偏移。</p>
+
+<p>需要注意的是,锚定系统和绝对位置是不能一块使用的。</p>
+
+<p><img src="../../../QT/QML/qml的一些概念/锚.PNG"></img></p>
+
+<p>qml还有专门为锚点变更制作动画的类型<b>AnchorAnimation</b></p>
+
+<p>------------------------------------------------------------------------------------------------</p>
+
+<br>
+<br>
+
+<p><b>Component : </b>组件,封装在一个单独的qml文件中(有点像C++类),组件的文件名必须<b>始终以大写字母开头</b>(如Cell2.qml)。</p>
+
+<xmp>
+        //这是 Cell2.qml 中的内容
+        import QtQuick 2.0
+
+        Rectangle{
+                id: root
+                property alias cellColor: root.color
+                width: 40; height: 40
+        }
+        
+
+
+        //这是主文件中引用的
+        import QtQuick 2.0
+        import "./package-compontent"
+
+        Item {
+
+            id:root
+            width:500
+            height:500
+
+            Cell2{
+
+            }
+        }
+</xmp>
+
+<p>------------------------------------------------------------------------------------------------</p>
+
+<br>
+<br>
+
+<p><b>Property Binding : </b>属性绑定,简单理解就是控件的一些属性绑定了其他会变化的值,qml能在运行过程中监控值的变化并修改。但是要注意避免复杂的属性绑定,否则会出现循环绑定或者造成运行慢的问题。</p>
+
+<p>qt-helper中指出,在属性绑定后进行静态数值赋值会取消属性绑定,当然还可以使用其他方法恢复。</p>
+
+<p>------------------------------------------------------------------------------------------------</p>
+
+<br>
+<br>
+
+<p><b>Signal Attributes : </b> 大概意思和C++ qt里的信号差不多,但是要注意信号处理函数名的写法onClicked()信号名要大写</p>
+
+<xmp>
+    //信号的定义
+    Item {
+        signal clicked
+        signal hovered()
+        signal actionPerformed(string action, var actionResult)
+    }
+</xmp>
+
+<p>------------------------------------------------------------------------------------------------</p>
+
+<br>
+<br>
+
+<p><b>visual parent : </b></p>
+
+
+
+
+
+
+
+
+ 
+</body>
+</html>

@@ -1,0 +1,25 @@
+.QWidget
+{
+    background-color: green;
+}
+
+.QFrame
+{
+    background-color: red;
+}
+
+.QLabel
+{
+    background-color: blue;
+}
+
+.QTextEdit
+{
+    background-color: purple;
+}
+
+/*tab页不需要更改背景颜色*/
+#tab_noinherselector   
+{
+   background-color: white;
+}

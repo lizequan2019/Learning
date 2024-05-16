@@ -1,0 +1,171 @@
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+    </style>
+
+
+<p>qt的调色板是自带的一个原始控件,它的原始界面是这样的</p>
+
+<p><img src="./../../QT/QT-语言家/originalcolordig .png"></img></p>
+
+<p>这很方便开发者使用,但是唯一缺点是没有汉化,想想突然出现一个全是英文label的界面是不适宜的,所以需要汉化</p>
+
+<br>
+
+<p>下面描述汉化的步骤</p>
+
+<p>(1) 找到对应的qm文件(文件本身应该是不区分32位还是64位的),找到以后,拷贝一份到自己的工程目录</p>
+
+<p><img src="./../../QT/QT-语言家/qmfile.png"></img></p>
+
+
+<p>(2) 打开QT语言家,32位找32位的,64位找64位的,使用QT语言家打开上面提到的qm文件</p>
+
+<p><img src="./../../QT/QT-语言家/linguist.png"></img></p>
+
+<p>(3) 打开文件后,在左侧会看到很多控件名称,每个控件内部的一些翻译条都可以在右边界面看到,可以看到QColorDialog控件中已经存在的翻译项,但是没有界面上面对应的翻译项</p>
+
+<p><img src="./../../QT/QT-语言家/item.png"></img></p>
+
+<p>(4) 此时需要修改qm文件,先将qm文件另存为.ts文件,这样就可以使用文本编辑器编辑,可以在文件内容中找到下面的内容</p>
+
+<xmp>
+    <context>
+        <name>QColorDialog</name>
+        <message>
+            <source>&amp;Red:</source>
+            <translation>红色(&amp;R):</translation>
+        </message>
+        <message>
+            <source>&amp;Sat:</source>
+            <translation>饱和度(&amp;S):</translation>
+        </message>
+        <message>
+            <source>&amp;Val:</source>
+            <translation>亮度(&amp;V):</translation>
+        </message>
+        <message>
+            <source>Hu&amp;e:</source>
+            <translation>色调(&amp;E):</translation>
+        </message>
+        <message>
+            <source>Select Color</source>
+            <translation>选择颜色</translation>
+        </message>
+        <message>
+            <source>&amp;Add to Custom Colors</source>
+            <translation>添加到自定义颜色(&amp;A)</translation>
+        </message>
+        <message>
+            <source>Bl&amp;ue:</source>
+            <translation>蓝色(&amp;U):</translation>
+        </message>
+        <message>
+            <source>&amp;Green:</source>
+            <translation>绿色(&amp;G):</translation>
+        </message>
+        <message>
+            <source>&amp;Basic colors</source>
+            <translation>基本颜色(&amp;B)</translation>
+        </message>
+        <message>
+            <source>&amp;Custom colors</source>
+            <translation>自定义颜色(&amp;C)</translation>
+        </message>
+        <message>
+            <source>A&amp;lpha channel:</source>
+            <translation>Alpha通道(&amp;A):</translation>
+        </message>
+    </context>
+</xmp>
+
+
+<p>(5) 增加字段,如下</p>
+
+<xmp>
+    <context>
+        <name>QColorDialog</name>
+        <message>
+            <source>&amp;Pick Screen Color</source>
+            <translation>获取屏幕颜色</translation>
+        </message>
+        <message>
+            <source>Cursor at %1, %2
+    Press ESC to cancel</source>
+            <translation>坐标: %1, %2
+    按ESC键取消</translation>
+        </message>
+        <message>
+            <source>Basic colors</source>
+            <translation>基础颜色</translation>
+        </message>
+        <message>
+            <source>&amp;Red:</source>
+            <translation>红色(&amp;R):</translation>
+        </message>
+        <message>
+            <source>&amp;Sat:</source>
+            <translation>饱和度(&amp;S):</translation>
+        </message>
+        <message>
+            <source>&amp;Val:</source>
+            <translation>亮度(&amp;V):</translation>
+        </message>
+        <message>
+            <source>Hu&amp;e:</source>
+            <translation>色调(&amp;E):</translation>
+        </message>
+        <message>
+            <source>Select Color</source>
+            <translation>选择颜色</translation>
+        </message>
+        <message>
+            <source>&amp;Add to Custom Colors</source>
+            <translation>添加到自定义颜色(&amp;A)</translation>
+        </message>
+        <message>
+            <source>Bl&amp;ue:</source>
+            <translation>蓝色(&amp;U):</translation>
+        </message>
+        <message>
+            <source>&amp;Green:</source>
+            <translation>绿色(&amp;G):</translation>
+        </message>
+        <message>
+            <source>&amp;Basic colors</source>
+            <translation>基本颜色(&amp;B)</translation>
+        </message>
+        <message>
+            <source>&amp;Custom colors</source>
+            <translation>自定义颜色(&amp;C)</translation>
+        </message>
+        <message>
+            <source>A&amp;lpha channel:</source>
+            <translation>Alpha通道(&amp;A):</translation>
+        </message>
+        <message>
+            <source>OK</source>
+            <translation>确定</translation>
+        </message>
+        <message>
+            <source>Cancel</source>
+            <translation>取消</translation>
+        </message>
+    </context>
+</xmp>
+
+<p>(6) 修改完毕后,保存文件,然后使用QT语言家发布成qm文件,这样在程序中就可以使用了</p>
+
+<pre>
+    QTranslator SysTranslator;
+    SysTranslator.load(QString("./qm/qt_zh_CN.qm"));
+    qApp->installTranslator(&SysTranslator);
+
+    QColor color("black");
+    QColorDialog dig;
+
+    dig.getColor(color, this, "test", QColorDialog::ShowAlphaChannel);
+</pre>
+
+<p><img src="./../../QT/QT-语言家/res.png"></img></p>

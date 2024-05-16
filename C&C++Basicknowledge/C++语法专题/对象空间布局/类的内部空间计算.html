@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>结构体和类内部空间的计算</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>1. 计算类对象空间占用大小</h1>
+
+<p>相比于结构体,C++类由于增加成员函数、虚函数和虚继承等内容,使得计算类对象占据内存变得复杂。</p>
+
+<a href="https://www.cnblogs.com/BEN-LK/p/10720337.html">【网络链接】C++一个类对象的大小计算</a> <br>
+
+<a href="https://blog.csdn.net/walker_xingruiguo/article/details/119670822">【网络链接】vs查看类内存空间的参考</a> <br>
+
+<p>命令行指令<b>cl /d1 reportSingleClassLayout类名 "cpp文件名"</b></p>
+
+<h2>1.1 规则总结</h2>
+
+<p>1. <b>空类</b>、单一继承的空类、多重继承的空类所占空间大小为1字节。</p>
+
+<p>2. 一个类中,<b>虚函数本身</b>、<b>成员函数(包括静态与非静态)</b>和<b>静态数据成员</b>都是不占用类对象的存储空间。</p>
+
+<p>3. 当类中声明了<b>虚函数</b>(无论是1个还是多个),那么在实例化对象时,编译器会自动在对象内部安插一个<b>虚函数指针vfPtr</b>指向<b>虚函数表VTable</b></p>
+
+<p>4. 当存在虚继承的情况,虚继承的实现是通过一个虚基类指针列表。由于涉及到虚函数表和虚基表,<br>会同时增加一个(多重虚继承下对应多个)虚函数指针vfPtr指向虚函数表vfTable和一个vbPtr(虚基类)指针指向虚基表vbTable</p>
+
+<p>5. 在考虑以上内容所占空间的大小时,还要注意编译器下的`自动补齐`的影响,即编译器会插入多余的字节补齐。</p>
+
+<p>6. 类对象的大小 = 各非静态数据成员的总和 + vfptr指针(多继承下可能不止一个) + vbptr指针(多继承下可能不止一个) + 编译器内存对齐的字节。</p>
+
+<p>下面将举几个例子对以上几条做验证,其余的可以查看其他笔记,环境设置<b>vs2019 debug x86</b>对齐系数设置为4。</p>
+
+<h3>1.1.1 空类所占空间大小为1字节</h3>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+
+        class A{};
+
+        int main(){
+            A aa;
+            cout << "size A = " << sizeof(A) << endl;
+            return 0;
+        }
+
+        /* 执行结果 类大小为1字节
+            class A size(1):
+                    +---
+                    +---
+        */
+</xmp>
+
+<h3>1.1.2 验证虚函数、成员函数函数和静态成员不占用空间</h3>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+        
+        class A{
+                virtual void fun(){}    //虚函数1
+                virtual void fun1(){}   //虚函数2
+                static int sttia;       //静态成员变量
+                static void fun3(){}    //静态成员函数
+                void fun2(){}           //普通函数
+        };
+        
+        int A::sttia = 0;
+        
+        int main(){
+            A aa;
+            cout << "size A = " << sizeof(A) << endl;
+            return 0;
+        }
+        
+        /*
+            执行结果 :  (1)类大小为4字节
+                        (2)类中增加了虚函数，但并不是虚函数本身占据空间，而是虚函数指针占据空间
+                        (3)从内存结构中可以看出静态成员和普通函数也是不占据空间的
+        
+            class A size(4):
+                    +---
+            0      | {vfptr} 【虚函数指针 占据4字节】
+                    +---
+        
+            A::$vftable@:    【虚函数表   不占据空间】
+                    | &A_meta
+                    |  0
+            0      | &A::fun
+            1      | &A::fun1
+        */
+</xmp>
+
+
+
+<h1>2. 关于空间内部中首地址元素</h1>
+
+<p>结构体中首地址元素是定义时内部的第一个元素。但是使用的时候需要转换成对应的类型才可以。</p>
+
+<p>类中如果存在存在虚函数，那么本类的虚函数指针在内部空间首地址，如果单独存在虚继承，那么本类的虚基类指针在内部空间首地址，如果两者同时存在，则本类的虚函数指针在内部空间首地址，其次就是虚基类指针。可以看上面的代码例子。</p>
+
+</body>
+</html>
+
+
+

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>解决qt5.12.12编译源码运行程序button没显示字的问题</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>编译前会执行configure操作,注意输出结果中的这几行</p>
+
+<pre>
+            Required system libraries:
+            fontconfig ........................... yes  <============ 这个
+            dbus ................................. yes
+            nss .................................. no
+            khr .................................. yes
+            glibc ................................ yes
+</pre>
+
+<p>这里确保fontconfig是yes,如果没有的话就安装一下,如下</p>
+
+<pre>
+            sudo apt-get install libfontconfig1-dev
+</pre>
+ 
+</body>
+</html>

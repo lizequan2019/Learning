@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>[刷题]函数值传递和指针传递问题</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<xmp>
+        #include <stdio.h>
+
+        void foobar(int a, int *b, int **c) { 
+            int *p = &a; 
+            *p = 101; 
+            *c = b; 
+            b = p; 
+        } 
+
+        int main() { 
+            int a = 1; 
+            int b = 2; 
+            int c = 3; 
+            int *p = &c; 
+            foobar(a, &b, &p); 
+            printf("a=%d, b=%d, c=%d, *p=%d\n", a, b, c, *p); 
+            return (0); 
+        }
+
+        /* 执行结果
+            a=1, b=2, c=3, *p=2
+        */
+</xmp>
+
+</body>
+</html>
+
+

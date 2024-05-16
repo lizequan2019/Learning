@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>问题说明和验证</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p><a href="https://github.com/gabime/spdlog/issues/2975">【网络链接】issue</a></p>   
+
+<p>问题的大概意思是,下面的代码没有按照楼主的预期输出日志</p>
+
+<xmp>
+            /*代码*/
+        
+            #include "spdlog/spdlog.h"
+            int main() 
+            {
+                spdlog::info("Welcome to spdlog!");
+                spdlog::error("Some error message with arg: {}", 1);
+
+                spdlog::warn("Easy padding in numbers like {:08d}", 12);
+                spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+                spdlog::info("Support for floats {:03.2f}", 1.23456);
+                spdlog::info("Positional args are {1} {0}..", "too", "supported");
+                spdlog::info("{:<30}", "left aligned");
+
+                spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+                spdlog::debug("This message should be displayed..");    
+
+                // change log pattern
+                spdlog::set_pattern("[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+
+                // Compile time log levels
+                // define SPDLOG_ACTIVE_LEVEL to desired level
+                SPDLOG_TRACE("Some trace message with param {}", 42);
+                SPDLOG_DEBUG("Some debug message");
+            }
+
+            
+            /*编译命令
+                        g++ -I include -std=c++11 -O0 -g -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -o spdlog-main ./spdlog-main.cc
+            */
+
+            /*日志输出结果
+                        这一条日志没有正常输出,其他输出正常
+                        SPDLOG_TRACE("Some trace message with param {}", 42); 
+            */
+
+
+
+
+</xmp>
+
+<p>楼主分析代码的过程还是挺厉害的,先进行预编译观察宏定义是否替换成功。然后再用gdb去跟踪代码观察输出逻辑。最后发现,需要在输出前进行日志等级设置,才能正常输出。</p>
+
+<xmp>
+            spdlog::set_level(spdlog::level::trace);              //设置日志等级为trace
+            SPDLOG_TRACE("Some trace message with param {}", 42);
+
+
+
+</xmp>
+
+
+<p>在这个issue下面,也有大佬解释了</p>
+
+<pre>
+            The logging macro SPDLOG_TRACE is a macro to remove unnecessary logging statements by SPDLOG_ACTIVE_LEVEL which was defined at compile time, 
+            so the current behavior is as specified.
+            SPDLOG_TRACE这个宏,依据SPDLOG_ACTIVE_LEVEL的值删除不必要的日志语句,而SPDLOG_ACTIVE_LEVEL是在编译时定义的,所以当前的行为是指定的【TODO 最后这半句没懂】。
+
+            The examples in the Basic usage section of README.md are certainly confusing.
+            这个代码示例来自README中的<b>Basic usage</b>,确实使人困惑。
+</pre>
+
+<p>也就是说<font color="#ff0000">编译时设置<b>SPDLOG_ACTIVE_LEVEL</b>并不会影响代码中<b>spdlog::set_level</b>设置的日志等级。</font></p>
+
+<p>我也去找了找源码看看,确实很难看啊,就当看小说一样了解一下,千万别想着全看明白。</p>
+
+<xmp>
+        //SPDLOG_TRACE的定义
+
+            #if SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_TRACE
+                #define SPDLOG_LOGGER_TRACE(logger, ...) \
+                    SPDLOG_LOGGER_CALL(logger, spdlog::level::trace, __VA_ARGS__)
+                #define SPDLOG_TRACE(...) SPDLOG_LOGGER_TRACE(spdlog::default_logger_raw(), __VA_ARGS__)
+            #else //在SPDLOG_ACTIVE_LEVEL > SPDLOG_LEVEL_TRACE的情况下,宏定义就是不执行
+                #define SPDLOG_LOGGER_TRACE(logger, ...) (void)0
+                #define SPDLOG_TRACE(...) (void)0
+            #endif
+
+
+
+
+
+        //底层日志是否输出的逻辑判断
+
+
+            SPDLOG_INLINE void logger::set_level(level::level_enum log_level) { level_.store(log_level); }
+
+
+            // return true logging is enabled for the given level.
+            bool should_log(level::level_enum msg_level) const {
+                return msg_level >= level_.load(std::memory_order_relaxed); //level_这个值会被 spdlog::set_level 修改
+            }
+
+
+            template <typename... Args>
+                void log_(source_loc loc, level::level_enum lvl, string_view_t fmt, Args &&...args) {
+                    bool log_enabled = should_log(lvl);  //这块进行了比较日志等级比较决定 log_enabled 
+                    bool traceback_enabled = tracer_.enabled();
+                    if (!log_enabled && !traceback_enabled) {
+</xmp>
+
+<br>
+<br>
+
+
+</body>
+</html>

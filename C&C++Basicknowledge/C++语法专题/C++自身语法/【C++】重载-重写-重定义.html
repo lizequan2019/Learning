@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>【C++】重载-重写-重定义</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h1>函数重载、重写(覆盖)、重定义(隐藏)的形成条件</h1>
+
+<table border="1px">
+    <tr> <td>名称</td> <td>函数作用域</td> <td>函数是否需要virtual修饰</td> <td>函数名是否相同</td> <td>形参列表是否相同</td> <td>返回值类型是否相同</td> </tr>
+    <tr> <td>重载</td> <td>相同</td> <td>无关</td> <td>相同</td> <td>不同</td> <td>无关</td> </tr>
+    <tr> <td>重写</td> <td>不同</td> <td>需要被修饰</td> <td>相同</td> <td>相同</td> <td>相同</td> </tr>
+    <tr> <td>隐藏</td> <td>不同</td> <td>不能被修饰</td> <td>相同</td> <td>无关</td> <td>无关</td> </tr>
+ </table>
+ 
+
+
+<h2>函数重载</h2>
+
+<p>1. 必须发生在同一个作用域中进行,不只是在类(同一个类中也算是同一个作用域)中才有的。</p>
+    
+<p>2. 子类和父类的函数不会产生重载关系(因为不在同一个作用域中)。</p>
+    
+<p>3. 重载是在编译期间根据参数列表和函数名决定,与函数返回类型无关。</p>
+    
+    
+    
+<h2>函数重定义(也称作隐藏)</h2>
+    
+<p>1. 必须<b>发生在父类和子类之间</b>,且函数名必须相同,返回值可以不同,参数列表也可以不同,同名函数没有被virtual修饰。</p>
+    
+<p>2. 虽然父类同名函数被隐藏,但是同名函数依旧存在子类中,需要用作用域分辨符::来调用父类同名函数。</p>
+    
+<p>3. 由于没有virtual修饰,没有多态,所以类对象指针只能调用该类中对应的函数。</p>
+       
+<p>函数重定义注意的坑,我认为多用于子类转换为父类的情况,而且这样是安全的(<b>毕竟父类中存在的元素在子类对象中也是有的,私有成员也是有的只不过是不能访问而已</b>)。如果要强制将父类转换成子类对象然后赋值给子类对象指针,那么就要<b>注意子类对象指针访问自己独有成员时会崩溃的问题</b>,如下例子。</p>
+
+<xmp>
+
+        #include <iostream>
+        #include <string>
+        using namespace std;
+
+        class Father{
+            public:
+                        int  a;
+                        string b;
+            public:
+                        void hide(){ cout << " 父类 hide()" << endl;}
+
+                        void hide(int x){ a = x; cout << "父类 " << __FUNCTION__ << " a = " << a << endl;}
+
+                        void hide(string x){ b = x; cout << "父类 " << __FUNCTION__ << " b = " << b << endl;}
+        };
+        
+
+        class Son : public Father{
+            public:
+                        string c;
+            public:
+                        void hide(){cout << " 子类 hide()" << endl;}
+
+                        void hide(int x){ a = x; cout << "子类 " << __FUNCTION__ << " a = " << a << endl;}
+
+                        void hide(string x){ c = x; cout << "子类 " << __FUNCTION__ << " c = " << c << endl;}
+        };
+        
+        int main(){
+
+            //正常使用
+            Father * p1 = new Father; 
+            p1->hide(10);
+            p1->hide();
+            cout << "======================" << endl;
+    
+            //子类转父类安全的向上转换  父类对象需要的成员内容,子类都存在
+            Father * p2 = static_cast<Father *> (new Son); 
+            p2->hide(10);
+            p2->hide();
+            cout << "======================" << endl;
+
+            //父类转换成子类
+            Son * s1 = (Son *) new Father; 
+            s1->hide(10);                  //子类对象函数中访问父类成员变量 执行正常
+            s1->hide("owwwwwwwwww");       //子类对象函数中访问子类独有的成员变量 崩溃
+
+            return 0;
+        }
+
+    /*
+        父类 hide a = 10
+        父类 hide()
+        ======================
+        父类 hide a = 10
+        父类 hide()
+        ======================
+        子类 hide a = 10
+        Segmentation fault (core dumped)
+    */
+</xmp>
+    
+
+    
+
+<h2>函数重写</h2>
+
+<p>了解了函数重定义后,发现机制上有些死板,类对象指针只能调用该类中对应的函数,而且<b>子类对象指针 = new 父类</b>这种使用情况还有限制,稍不注意就会崩溃。这回再看看函数重写的机制</p>
+    
+<p>1. 必须<b>发生于父类与子类之间</b>且<b>父类与子类中的函数必须有完全相同的原型(函数名相同、参数列表相同、返回值类型相同)</b>,必须使用<b>virtual修饰函数</b>。</p>
+    
+<p>2. <b>注意被static修饰的函数不能被重写(没有this指针),编译器会提醒错误</b>。</p>
+    
+<p>3. 由于有virtual修饰,发生多态,所以能调用的函数取决于创建的类。</p>    
+
+<p>基于上面的代码,进行简单修改子类和父类中的<b>void hide(string x)</b>函数都用virtual修饰一下,再次执行发现没有出现崩溃,最后子类对象指针调用的是父类的函数。</p>
+    
+<xmp>
+    父类 hide a = 10
+    父类 hide()
+    ======================
+    父类 hide a = 10
+    父类 hide()
+    ======================
+    子类 hide a = 10              //hide(int x) 函数没有被virtual修饰,还是属于函数重定义
+    父类 hide b = owwwwwwwwww     //hide(string x) 被virtual修饰,属于函数重写
+</xmp>
+
+</body>
+</html>
+
+
+
+
+
+
+

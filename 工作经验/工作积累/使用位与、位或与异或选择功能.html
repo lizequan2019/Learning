@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>使用位与、位或与异或选择功能</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>在工作中遇到的,通过位操作可以方便的判断出功能的添加和取消,【TODO异或 一个字节的二进制只能表示8个功能吗?还是256个?我觉得只有8个】</p>
+
+<xmp>
+    #include <cstddef>
+    #include <iostream>
+
+    using namespace std;
+
+    #define FUN1_0  0x0001
+    #define FUN1_1  0x0002
+    #define FUN1_2  0x0004
+
+    #define FUN2_0  0x0010
+    #define FUN2_1  0x0020
+    #define FUN2_2  0x0040
+
+
+    #define FUN3_0  0x0100
+    #define FUN3_1  0x0200
+
+    size_t funchoose = 0x00;  //已经选择的功能
+
+    void addfunc(size_t functype){
+        std::cout << __FUNCTION__ << "   before add func funchoose = 0x" << std::hex << funchoose << std::endl;
+        std::cout << __FUNCTION__ << "   add func  = " << functype << std::endl;
+        funchoose = funchoose | functype;  //位或
+        std::cout << __FUNCTION__ << "   after  add func funchoose = 0x" << std::hex << funchoose << std::endl;
+        std::cout << "==" << std::endl;
+    }
+
+    void delfunc(size_t functype){
+        std::cout << __FUNCTION__ << "   before del func funchoose = 0x" << std::hex << funchoose << std::endl;
+        std::cout << __FUNCTION__ << "   del func  = " << functype << std::endl;
+        size_t temp  = funchoose ^ functype;  //关键操作异或
+        funchoose = funchoose & temp;         //位与
+        std::cout << __FUNCTION__ << "   after  del func funchoose = 0x" << std::hex << funchoose << std::endl;
+        std::cout << "==" << std::endl;
+    }
+
+
+    int main(){
+
+            //增加功能
+            addfunc(FUN1_0);
+            addfunc(FUN1_1);
+            addfunc(FUN1_2);
+            addfunc(FUN3_0);
+
+            std::cout << "==============================" << std::endl;
+
+            //删除功能
+            delfunc(FUN1_0);
+            delfunc(FUN1_1);
+            delfunc(FUN1_2);
+            delfunc(FUN3_0);
+
+            return 0;
+    }
+
+    //执行结果
+        addfunc   before add func funchoose = 0x0
+        addfunc   add func  = 1
+        addfunc   after  add func funchoose = 0x1
+        ==
+        addfunc   before add func funchoose = 0x1
+        addfunc   add func  = 2
+        addfunc   after  add func funchoose = 0x3
+        ==
+        addfunc   before add func funchoose = 0x3
+        addfunc   add func  = 4
+        addfunc   after  add func funchoose = 0x7
+        ==
+        addfunc   before add func funchoose = 0x7
+        addfunc   add func  = 100
+        addfunc   after  add func funchoose = 0x107
+        ==
+        ==============================
+        delfunc   before del func funchoose = 0x107
+        delfunc   del func  = 1
+        delfunc   after  del func funchoose = 0x106
+        ==
+        delfunc   before del func funchoose = 0x106
+        delfunc   del func  = 2
+        delfunc   after  del func funchoose = 0x104
+        ==
+        delfunc   before del func funchoose = 0x104
+        delfunc   del func  = 4
+        delfunc   after  del func funchoose = 0x100
+        ==
+        delfunc   before del func funchoose = 0x100
+        delfunc   del func  = 100
+        delfunc   after  del func funchoose = 0x0
+        ==
+</xmp>
+ 
+</body>
+</html>

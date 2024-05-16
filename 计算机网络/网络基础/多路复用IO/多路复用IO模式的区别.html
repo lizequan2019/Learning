@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>多路复用IO模式的区别</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h2>IO多路复用的含义</h2>
+ 
+<p>IO多路复用表示,多个描述符fd的I/O操作都能在一个线程内并发交替地顺序完成,这就叫I/O多路复用,这里的<b>复用</b>指的是复用同一个线程。</p>
+
+<p>主要使用的模型有select、poll、epoll和iocp,下面简单介绍一下它们之间的区别。</p>
+
+<p><a href="../../../Linux/linux系统知识/经常会用的linux系统调用.html">【本地链接】经常会用的linux系统调用</a> </p>
+
+<p>【TODO iocp 以后用到补充】</p>
+ 
+</body>
+</html>
+
+

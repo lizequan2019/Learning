@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>ensp的简单使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>ensp的视图与切换</h1>
+<p>ensp分为<b>用户视图(尖括号)</b>、<b>系统视图(方括号)</b>、<b>接口视图(方括号+接口)</b></p>
+
+<p>用户视图->输入system-view->系统视图,系统视图->int 设备接口->接口视图</p>
+
+<p>使用quit可以返回上一级视图,使用return可以直接返回到用户视图</p>
+
+<br>
+<br>
+
+<h1>删除命令</h1>
+<p>undo + 刚才操作的命令</p>
+
+<br>
+<br>
+
+<h1>保存</h1>
+<p>在用户视图下使用 save命令</p>
+
+<br>
+<br>
+
+<h1>修改语言模式</h1>
+<p>在用户视图下使用 language-mode Chinese 命令</p>
+
+<br>
+<br>
+
+<h1>交换机的配置</h1>
+
+<p>ip地址的设置</p>
+<xmp>
+            显示接口ip : display ip interface brief
+
+            设置vlan 1的ip地址 :  ip address 192.168.1.253 24  //最后记得在用户视图保存
+
+</xmp>
+
+<p>mac地址表老化时间设置</p>
+<xmp>
+            显示目前设置的老化时间 : display mac-address aging-time //在系统视图下使用
+
+            设置老化时间 :  mac-address aging-time xxxx
+
+</xmp>
+
+<p>vlan的设置,<font color="ff0000">注意,trunk和hybrid没有设置所属vlan一说,它们只有设置允许列表。access才能设置所属vlan。</font></p>
+
+<xmp>
+    基于交换机端口划分
+                        (1) 切换到系统视图,可以先观察一下vlan的当前设置 :  display vlan
+                        
+
+                        (2) 增加或者删除vlan :
+                            增加单个 vlan 10      批量增加 vlan batch x to y
+                            删除单个 undo 10      批量删除 vlan batch x to y
+                        
+                        
+                        (3) 配置端口为access类型(华为设备端口默认是HyBrid),需要进入到接口视图 :  interface Ethernet 0/0/1 
+                            配置端口类型为access类型 : port link-type access
+                            观察配置是否成功 : display this 或者 display vlan
+
+                            配置access接口所属哪个vlan,还是在接口视图配置 : port default vlan 2
+                            观察配置是否成功 : display this
+
+
+                        (4) 配置端口为trunk类型,需要进入到接口视图 :  interface Ethernet 0/0/1 
+                            配置端口类型为trunk类型 : port link-type trunk
+                            配置端口的允许列表 : port trunk allow-pass vlan x  y z
+                            观察配置是否成功 :  display this 或者 display vlan
+
+
+                        (5) 配置端口为hybrid类型,需要进入到接口视图 :  interface Ethernet 0/0/1 
+                            配置端口类型为hybrid类型 : port link-type hybrid
+                            配置hybrid类型端口所属vlan : port hybrid pvid vlan x
+                            配置hybrid类型端口允许列表以及发送是否带pvid标记 : port hybrid untagged/tagged  vlan x y z
+
+                            
+
+    基于电脑涉笔MAC地址划分  注意:使用这种划分方式,交换机端口类型一般配置成hybrid类型
+
+                        (1) 首先添加vlan :  vlan 2
+
+                        (2) 进入vlan 2 : vlan 2 
+                            配置关联的设备mac地址 : mac-vlan mac-address xxxx-xxxx-xxxx  //54-89-98-45-61-EE ==>  5489-9845-61EE
+                            观察结果 : display mac-vlan mac-address all
+
+                        (3) 进入连接电脑设备的交换机端口 : int e0/0/x
+                            设置端口的允许列表 : port hybrid untagged vlan 2
+                            使能该端口mac地址划分 : mac-vlan enable
+                        
+                        (4) 进入连接其他交换机的交换机端口 : int e0/0/x
+                            设置端口的允许列表 : port hybrid tagged vlan 2 x
+                        
+</xmp>
+
+
+
+
+
+ 
+</body>
+</html>

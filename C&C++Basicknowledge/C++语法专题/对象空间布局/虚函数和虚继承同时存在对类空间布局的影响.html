@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>虚函数和虚继承同时存在对类空间布局的影响</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+
+<p>运行环境 debug vc2019 32位</p>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+        
+        
+        class A1 {
+            virtual void fun1() {};
+        };
+        
+        class A2 : virtual public A1 {
+            virtual void fun2() {};
+        };
+        
+        class A3 : virtual public A1 {
+            virtual void fun3() {};
+        };
+        
+        class A4 : public A2, public A3 {
+            virtual void fun1() {};
+        };
+        
+        int main() {
+            cout << "size A1 = " << sizeof(A1) << endl;
+            cout << "size A2 = " << sizeof(A2) << endl;
+            cout << "size A3 = " << sizeof(A3) << endl;
+            cout << "size A4 = " << sizeof(A4) << endl;
+            return 0;
+        }
+        
+        /*
+            size A1 = 4
+            size A2 = 12
+            size A3 = 12
+            size A4 = 20
+        
+        ==========================================================
+        class A1        size(4):
+                +---
+         0      | {vfptr}
+                +---
+        
+        A1::$vftable@:
+                | &A1_meta
+                |  0
+         0      | &A1::fun1
+        
+        
+        
+        
+        
+        
+        ===========================================================
+        class A2        size(12):
+                +---
+         0      | {vfptr}
+         4      | {vbptr}                   <============================== 第一个是虚函数指针 第二个才是虚基类指针
+                +---
+                +--- (virtual base A1)
+         8      | {vfptr}
+                +---
+        
+        A2::$vftable@A2@:
+                | &A2_meta
+                |  0
+         0      | &A2::fun2
+        
+        A2::$vbtable@:
+         0      | -4
+         1      | 4 (A2d(A2+4)A1)
+        
+        A2::$vftable@A1@:
+                | -8
+         0      | &A1::fun1
+        
+        A2::fun2 this adjustor: 0
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1       8       4       4 0
+        
+        
+        
+        
+        
+        
+        ==========================================================
+        class A3        size(12):
+                +---
+         0      | {vfptr}
+         4      | {vbptr}
+                +---
+                +--- (virtual base A1)
+         8      | {vfptr}
+                +---
+        
+        A3::$vftable@A3@:
+                | &A3_meta
+                |  0
+         0      | &A3::fun3
+        
+        A3::$vbtable@:
+         0      | -4
+         1      | 4 (A3d(A3+4)A1)
+        
+        A3::$vftable@A1@:
+                | -8
+         0      | &A1::fun1
+        
+        A3::fun3 this adjustor: 0
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1       8       4       4 0
+        
+        
+        
+        
+        
+        
+        ==========================================================
+        class A4        size(20):
+                +---
+         0      | +--- (base class A2)
+         0      | | {vfptr}
+         4      | | {vbptr}
+                | +---
+         8      | +--- (base class A3)
+         8      | | {vfptr}
+        12      | | {vbptr}
+                | +---
+                +---
+                +--- (virtual base A1)
+        16      | {vfptr}
+                +---
+        
+        A4::$vftable@A2@:
+                | &A4_meta
+                |  0
+         0      | &A2::fun2
+        
+        A4::$vftable@A3@:
+                | -8
+         0      | &A3::fun3
+        
+        A4::$vbtable@A2@:
+         0      | -4
+         1      | 12 (A4d(A2+4)A1)
+        
+        A4::$vbtable@A3@:
+         0      | -4
+         1      | 4 (A4d(A3+4)A1)
+        
+        A4::$vftable@A1@:
+                | -16
+         0      | &A4::fun1        <=============================== 发生了函数重写,形成多态
+        
+        A4::fun1 this adjustor: 16
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1      16       4       4 0
+        */
+</xmp>
+
+ 
+</body>
+</html>

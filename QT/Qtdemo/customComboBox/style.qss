@@ -1,0 +1,10 @@
+/*设置下拉框未展开时显示框的样式*/
+MultiSelectComboBox 
+{
+   padding-top: 0px;
+   padding-bottom: 0px;
+   margin-top: 0px;
+   margin-bottom: 0px;
+   max-height: 30px;
+   min-height: 30px;
+}

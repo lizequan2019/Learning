@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>解决qt5.12.12编译源码没有libqxcb的问题</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>最近要研究一下qt源码,因为设计到要修改源码,所以需要编译源码并替换修改的库文件运行验证。</p>
+
+<p>我这里使用的是qt5.12.12版本,去官网上下载对应版本的安装包,安装时勾选上源码即可。</p>
+
+<p>后面编译完发现,plugins/platforms/目录下没有生成库文件libqxcb.so,造成了一点麻烦。</p>
+
+<pre>
+        设置 export QT_DEBUG_PLUGINS=1 
+        大概的提示是 qt.qpa.plugin: Could not load the Qt platform plugin "xcb" in "xxx" even though it was found.
+</pre>
+
+<p>下面记录一下,我使用的解决方法</p>
+
+<p>1. 在编译前会执行configure脚本,后面要加-xcb参数,如下</p>
+
+<pre>
+        ./configure -prefix /opt/build  -opensource -confirm-license  -skip qtlocation  -nomake examples   -nomake tests -xcb
+</pre>
+
+<p>2. 直接执行configure可能会报错,此时安装xcb需要的一些库</p>
+
+<pre>
+        sudo apt update
+        sudo apt-get install libdrm-dev libxcomposite-dev libxcursor-dev libxi-dev libxtst-dev
+
+        //这几个都搞成yes
+        Required system libraries for qpa-xcb:
+        x11 .................................. yes
+        libdrm ............................... yes
+        xcomposite ........................... yes
+        xcursor .............................. yes
+        xi ................................... yes
+        xtst ................................. yes
+</pre>
+
+
+<p>3. make、 make install</p>
+
+
+</body>
+</html>

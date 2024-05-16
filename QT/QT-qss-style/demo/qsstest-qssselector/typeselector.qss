@@ -1,0 +1,12 @@
+QFrame
+{
+    border-width: 3px;
+    border-color: yellow;
+    border-style: solid;
+    background-color: green;
+}
+
+#wgt_typeselect
+{
+    background-color: grey;
+}

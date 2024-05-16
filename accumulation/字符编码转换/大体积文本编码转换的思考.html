@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>大体积文本编码转换的思考</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>思考</h1>
+
+<p>在<a href="../../accumulation/字符编码转换/在windwos下使用libiconv转换编码格式.html">在windwos下使用libiconv转换编码格式.html</a>笔记中实现了常用编码格式转换的功能,但这还是一个demo。因为代码中向libiconv库函数传递的字符串是存放在堆空间中的(我也是从网上找例子测试,是否一定要开辟堆空间存放还有待考证),如果一次性转换的字节数很巨大的话,就会导致内存空间不足,进而引发功能异常。</p>
+
+<p>所以,对于需要大量转换的数据,应该采取分段多次转换的方法。</p>
+
+<p>经过观察,有的编码格式每个字符对应的字节是固定的,这样分段是容易的。比如<b>GB2312</b>格式,一个字符占两个字节,那么每次处理的字节数就是2的整倍数即可。</p>
+
+<p>除了上面说的字节数固定的情况,还有向utf8这种字符字节数会变化的情况,这种转换则需要复杂些的处理。</p>
+
+<details>
+    <summary> 分段转换utf8格式数据到GB2312 GBK GB18030 </summary>
+<xmp>
+        #include <iostream>
+        #include <fstream>   
+        #include <string>  
+        #include <bitset> 
+        #include "iconv.h" //包函libiconv库头文件
+        
+        //导入libiconv库
+        #pragma comment(lib,"libiconv.lib")
+        
+        bool readfile(const std::string& _filepath, std::string& _filecontent)
+        {
+            bool res = false;
+            std::ifstream file(_filepath);
+        
+            if (!file.is_open()) { // 检查文件是否成功打开  
+                std::cerr << "无法打开文件" << _filepath << std::endl;
+            }
+            else {
+                std::string line;
+                while (std::getline(file, line)) { // 逐行读取文件内容  
+                    _filecontent += line;
+                }
+                res = true;
+            }
+            file.close(); // 关闭文件
+            return res;
+        }
+        
+        //使用 libiconv 进行
+        int TransCore(const char* _pdesc, const char* _psrc, const char* _pstrin, size_t ilen, char* _pstrout, size_t* _polen)
+        {
+            const char** ppin = &_pstrin;
+            char** ppout = &_pstrout;
+        
+            iconv_t cd = iconv_open(_pdesc, _psrc);
+            if (cd == (iconv_t)-1) {
+                return -1;
+            }
+            memset(_pstrout, 0, *_polen);
+        
+            int res = iconv(cd, ppin, &ilen, ppout, _polen);
+            std::cout <<__FUNCTION__<< " exec res = " << res << std::endl;
+        
+            iconv_close(cd);
+            return res;
+        }
+        
+        /*
+            desc 目标编码字符串
+            src  源编码字符串
+        
+            _strin 转换前内容
+            _strout 转换后内容
+        */
+        bool TransEncodeFormat(const char* _desc, const char* _src, const std::string& _strin, std::string& _strout) {
+        
+            bool res = false;
+        
+            if (_desc == nullptr || _src == nullptr || _strin.empty()) {
+                std::cout << "入参不符合要求" << std::endl;
+                return res;
+            }
+        
+            size_t  inlen = _strin.length();
+        
+        #ifdef  LOG
+            std::cout << "需要转换的内容 : [" << _strin << "]" << std::endl;
+            std::cout << "需要转换的字节数 : [" << inlen << "]" << std::endl;
+        #endif
+        
+            size_t  outlen = inlen * 10;
+            char* tempout = new char[outlen];
+        
+            if (TransCore(_desc, _src, _strin.c_str(), inlen, tempout, &outlen) == 0 && tempout != nullptr) {
+                res = true;
+            }
+        
+        #ifdef  LOG
+            std::cout << "转换后的内容 : [" << tempout << "]" << std::endl;
+        #endif
+        
+            std::string temp(tempout);
+            _strout = tempout;
+        
+            delete[] tempout;
+            tempout = nullptr;
+        
+            return res;
+        }
+        
+        /*
+             描述   :  在_strin字符串是正确的utf8格式的情况下,分段将utf8字符转换成其他编码格式内容
+        
+             _desc  :  目标编码格式
+             _strin :  被转换的uft8字符串内容
+             _strout:  转换后字符串内容
+             _segnum:  一段字符串字节个数,默认是100字节
+        
+             返回值 :  true 转换成功  false转换失败
+        */
+        bool SegmentTransUtf8ToOther(const char* _desc, const std::string& _strin, std::string& _strout, const int& _segnum = 100) {
+        
+            const char* _src = "UTF-8";
+            size_t _transcounter = 0;
+        
+        
+            if (_strin.size() == 0) {//没有内容就返回
+                _strout.clear();
+                return true;
+            }
+        
+            if (_segnum <= 0) {
+                return false;
+            }
+        
+            if (_strin.size() <= _segnum) {//字符串小于等于_segnum
+                std::cout << "第" << ++_transcounter << "段转换" <<",转换字节数"<< _strin.size() << std::endl;
+                if (TransEncodeFormat(_desc, _src, _strin, _strout) == false) {
+                    return false;
+                }
+            }
+            else {//字符串大于_segnum
+                int leftpos = 0;                //左边界位置
+                int endpos = _strin.size() - 1; //  结束位置
+        
+        
+                while (leftpos <= endpos) {    
+                    int rightpos = 0;//右边界位置
+                    int remainingbytes = endpos - leftpos + 1;   //左边界到结束剩余的字节数
+                    std::string outemp;
+        
+                    if (remainingbytes <= _segnum) {//剩余字节数小于_segnum
+        
+                        rightpos = endpos;
+                        std::string temp = _strin.substr(leftpos, remainingbytes); 
+                        std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                        if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                            return false;
+                        }
+                        _strout += outemp;
+        
+                    } else {
+        
+                        rightpos = leftpos + (_segnum - 1);
+                        const char lastbyte = _strin[rightpos];//通过要截取的最后一个字节 判断截取字符串是否完整
+        
+                        if (((char)(lastbyte | 0x7f) == (char)0x7f) && ((char)(lastbyte & 0x00) == (char)0x00)) {//最后一个字节是 0XXX XXXX
+        
+                            std::string temp = _strin.substr(leftpos, rightpos - leftpos + 1);
+                            std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                            if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                                return false;
+                            }
+                            _strout += outemp;
+        
+                        } else if (((char)(lastbyte | 0xbf) == (char)0xbf) && ((char)(lastbyte & 0x80) == (char)0x80)) {//最后一个字节是 10XX XXXX
+                            
+                            while (1) {
+                                rightpos = rightpos + 1;
+                                if (rightpos > endpos) {//判断rightpos是否超出边界
+                                    return false;
+                                }
+        
+                                const char lastbytetemp = _strin[rightpos];
+                                if (((char)(lastbytetemp | 0xbf) == (char)0xbf) && ((char)(lastbytetemp & 0x80) == (char)0x80)) {
+                                    //最后一个字节是 10XX XXXX
+                                }else {
+                                    //最后一个字节不是 10XX XXXX  那么就少截取一个并跳出while循环
+                                    rightpos = rightpos - 1;
+                                    break;
+                                }
+                            }//while
+        
+                            if (rightpos < 0 || rightpos < leftpos) {//rightpos 上面进行了减法所以判断一下
+                                return false;
+                            }
+        
+                            std::string temp = _strin.substr(leftpos, rightpos - leftpos + 1);
+                            std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                            if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                                return  false;
+                            }
+                            _strout += outemp;
+        
+                        } else if (((char)(lastbyte | 0xdf) == (char)0xdf) && ((char)(lastbyte & 0xc0) == (char)0xc0)) {//最后一个字节是 110X XXXX
+        
+                            rightpos = rightpos + 1;
+                            if (rightpos > endpos) {//判断rightpos是否超出边界
+                                return false;
+                            }
+        
+                            std::string temp = _strin.substr(leftpos, rightpos - leftpos + 1);
+                            std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                            if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                                return false;
+                            }
+                            _strout += outemp;
+        
+                        } else if (((char)(lastbyte | 0xef) == (char)0xef) && ((char)(lastbyte & 0xe0) == (char)0xe0)) {//最后一个字节是 1110 XXXX
+        
+                            rightpos = rightpos + 2;
+                            if (rightpos > endpos) {//判断rightpos是否超出边界
+                                return false;
+                            }
+        
+                            std::string temp = _strin.substr(leftpos, rightpos - leftpos + 1);
+                            std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                            if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                                return false;
+                            }
+                            _strout += outemp;
+        
+                        } else if (((char)(lastbyte | 0xf7) == (char)0xf7) && ((char)(lastbyte & 0xf0) == (char)0xf0)) {//最后一个字节是 1111 0XXX
+        
+                            rightpos = rightpos + 3;
+                            if (rightpos > endpos) {//判断rightpos是否超出边界
+                                return false;
+                            }
+        
+                            std::string temp = _strin.substr(leftpos, rightpos - leftpos + 1);
+                            std::cout << "第" << ++_transcounter << "段转换" << ",转换字节数" << temp.size() << std::endl;
+                            if (TransEncodeFormat(_desc, _src, temp, outemp) == false) {
+                                return false;
+                            }
+                            _strout += outemp;
+        
+                        }
+                    }
+                    leftpos = rightpos + 1;
+                }
+            }
+        
+            std::cout << __FUNCTION__ << " exec success" << std::endl;
+            return true;
+        }
+        
+        
+        
+        int main(int argc, char* argv[])
+        {
+            
+            {
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gbkfilepath = "./test-file/utf-8.txt";
+                readfile(gbkfilepath, filecontent);
+        
+                std::cout << "  ./test-file/utf-8.txt 内容字节数 = " << filecontent.size() << std::endl;
+        
+                bool res = SegmentTransUtf8ToOther("GBK", filecontent, transcontent, 1000);
+        
+                std::cout << " transcontent 内容字节数 = " << transcontent.size() << std::endl;
+        
+                std::cout << " transcontent GBK 内容[" << transcontent <<"]" << std::endl;
+        
+                std::cout << "====================================================" << std::endl;
+            }
+            
+        
+            {
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gbkfilepath = "./test-file/utf-8.txt";
+                readfile(gbkfilepath, filecontent);
+        
+                std::cout << "  ./test-file/utf-8.txt 内容字节数 = " << filecontent.size() << std::endl;
+        
+                bool res = SegmentTransUtf8ToOther("GB18030", filecontent, transcontent, 1000);
+        
+                std::cout << " transcontent 内容字节数 = " << transcontent.size() << std::endl;
+        
+                std::cout << " transcontent GB18030 内容[" << transcontent << "]" << std::endl;
+        
+                std::cout << "====================================================" << std::endl;
+            }
+        
+            {
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gbkfilepath = "./test-file/utf-8.txt";
+                readfile(gbkfilepath, filecontent);
+        
+                std::cout << "  ./test-file/utf-8.txt 内容字节数 = " << filecontent.size() << std::endl;
+        
+                bool res = SegmentTransUtf8ToOther("GB2312", filecontent, transcontent, 1000);
+        
+                std::cout << " transcontent 内容字节数 = " << transcontent.size() << std::endl;
+        
+                std::cout << " transcontent GB2312 内容[" << transcontent << "]" << std::endl;
+        
+                std::cout << "====================================================" << std::endl;
+            }
+        
+            return 0;
+        }
+</xmp>
+</details>
+
+</body>
+</html>

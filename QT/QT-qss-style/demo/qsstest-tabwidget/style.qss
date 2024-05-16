@@ -1,0 +1,96 @@
+
+/*tabwidget 下半部分主体*/
+QTabWidget::pane
+{
+    border-width:2px;
+    border-radius: 5px;
+    border-color:black;
+    border-style: outset;
+    background-color: rgb(212, 139, 44);
+
+} 
+
+/*选项卡整体位置的设置  看网上还能设置别的属性，但是我没试成功*/
+QTabWidget::tab-bar
+{
+    alignment: center;
+}
+
+
+/*上面选项卡子控件*/
+QTabWidget QTabBar::tab
+{
+    background-color:aquamarine;
+    border-top-width: 1px;
+    border-left-width: 1px;
+    border-bottom-width: 0px;
+    border-style: inset;
+    border-color: #3b97e2;
+    border-top-left-radius: 10px;
+
+    padding-bottom: 1px;
+
+    max-width: 75px; 
+    min-width:75px; 
+    min-height:40px;
+    font:14px Times New Roman;
+}
+
+/* 最右侧的箭头之右 */
+QTabWidget QTabBar QToolButton::right-arrow 
+{
+    background-color:rgb(45, 240, 61);
+    border-width: 2px;
+    border-radius: 15px;
+    border-style: solid;
+    border-color: blueviolet;
+    image: url(./right.svg);
+}
+
+/* 最右侧的箭头之左 */
+QTabWidget QTabBar QToolButton::left-arrow 
+{
+    background-color:rgb(45, 240, 61);
+    border-width: 2px;
+    border-radius: 15px;
+    border-style: solid;
+    border-color: blueviolet;
+    image: url(./left.svg);
+}
+
+/*选项卡右侧的箭头所在的子控件*/
+QTabWidget QTabBar::scroller
+{
+    width: 80px;
+}
+
+
+/*第一个选项卡被选中后*/
+QTabWidget QTabBar::tab:first:selected 
+{
+    color: white;
+    background-color: black;
+}
+
+
+/*中间部分的选项卡被选中后*/
+QTabWidget QTabBar::tab:middle:selected 
+{
+    color: rgb(15, 240, 34);
+    background-color: black;
+}
+
+/*最后一个选项卡被选中后*/
+QTabWidget QTabBar::tab:last:selected 
+{
+    color: rgb(22, 222, 236);
+    background-color: black;
+    border-bottom-width: 2px;
+}
+
+/*被选中的选项卡*/
+QTabWidget QTabBar::tab:selected 
+{
+    border-bottom-width: 3px;
+}
+

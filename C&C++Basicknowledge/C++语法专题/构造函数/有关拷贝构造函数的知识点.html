@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>有关拷贝构造函数的知识点</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h2>1. 拷贝构造函数会被调用的情况</h2>
+
+<pre>
+    * 一个类对象去初始化一个类对象情况
+  
+    * 类对象作为一个<b>实参传递(不是引用、指针)情况</b>
+      
+    * 函数的返回值是一个<b>类对象传递(不是引用、指针)</b>情况
+      
+    * 使用初始化列表初始类对象
+</pre>
+ 
+<p>下面通过代码分析</p>
+
+<xmp>
+    #include<iostream>
+    using namespace std;
+
+    class A{
+        public:
+            A(int a){
+                cout << "运行构造函数" << endl;
+                x = a;
+            }
+
+            A(const A & a){
+                cout << "运行拷贝构造函数" << endl;
+                this->x = a.x;
+            }
+
+            void value(){
+                cout << "x = " << this->x << endl;
+            }
+
+            ~A(){
+                cout << "析构函数" << endl;
+            }
+        private:
+            int x;
+    };
+
+    void funvalue(A a){//值传递
+        a.value();
+    }
+
+    void funpoint(A * a){//指针传递
+        a->value();
+    }
+
+    void funquote(A & a){//引用传递
+        a.value();
+    }
+
+    A Retfunvalue(A a){//函数返回类对象
+    return a;
+    }
+
+    A * Retfunpoint(A * a){//函数返回类对象指针
+    return a;
+    }
+
+    A & Retfunquote(A & a){//函数返回类对象引用
+        return a;
+    }
+
+    int main(){
+        cout << "======测试构造函数======" << endl;
+        A a1(10);      
+        A a3 = A(10);  //注意 : 使用或不使用编译参数 -fno-elide-constructors  此语句执行结果不一样
+        
+        cout << "======测试拷贝构造函数======" << endl;
+        A a2 = a1;     
+
+        //测试不同的传递形参类型会不会调用拷贝构造函数
+        cout << "======测试值传递======" << endl;
+        funvalue(a2); 
+        cout << "======测试指针传递======" << endl;
+        funpoint(&a2); 
+        cout << "======测试引用传递======" << endl;
+        funquote(a2); 
+
+        //测试不同的返回类型会不会调用拷贝构造函数
+        cout << "======测试返回值======" << endl;
+        Retfunvalue(a2); 
+        cout << "======测试返回指针======" << endl;
+        Retfunpoint(&a2); 
+        cout << "======测试返回引用======" << endl;
+        Retfunquote(a2); 
+
+        cout << endl;
+        cout << endl;
+        cout << "==========后面输出的都是系统自己操作的==========" << endl;  
+        return 0;
+    }
+
+    /*
+        ======测试构造函数======
+        运行构造函数
+
+        ---------------------------------------->  这是不使用 -fno-elide-constructors 编译参数的结果
+        运行构造函数    
+        ----------------------------------
+        运行构造函数
+        运行拷贝构造函数
+        析构函数
+        <---------------------------------------- 这是使用 -fno-elide-constructors 编译参数的结果
+
+        ======测试拷贝构造函数======
+        运行拷贝构造函数
+
+
+        ======测试值传递======
+        运行拷贝构造函数
+        x = 10
+        析构函数
+
+        ======测试指针传递======
+        x = 10
+
+        ======测试引用传递======
+        x = 10
+
+
+        ======测试返回值======
+        运行拷贝构造函数         //入参时发生的
+        运行拷贝构造函数         //函数返回时发生的
+        析构函数
+        析构函数
+
+        ======测试返回指针======
+        
+        ======测试返回引用======
+
+
+        ==========后面输出的都是系统自己操作的==========
+        析构函数
+        析构函数
+        析构函数
+        */
+</xmp>
+
+
+</body>
+</html>
+
+
+<h3>1.1 A a3 = A(10)结果的解析</h3>
+
+<p>在上面的代码中<b>A a3 = A(10);</b>是一个特别的存在,在编译器优化与不优化的情况会有不同的结果。下面分析一下。</p>
+
+<p>A(10)执行了一次构造函数,同时也创建了一个<b>临时对象</b>,然后就是<b>A a3 = 临时对象</b>,此时本应该调用的是拷贝构造函数,但是因为编译器优化(<b>在不影响最终执行结果的前提下,会尽力减少临时对象的产生</b>)导致了A(10)会被优化成10,最终的结果也成了<b>A a3 = 10</b>(这种写法可以编译成功,因为进行了隐式类型转换),只执行一次构造函数。</p>  
+
+<p>那么如何关闭的编译器优化,避免出现隐式转换,这里可以使用编译器选项 -fno-elide-constructors </p>
+<xmp>
+    -fno-elide-constructors
+    
+    The C++ standard allows an implementation to omit creating a temporary that is only used to initialize another object of the same type. Specifying this option disables that optimization, and forces G++ to call the copy constructor in all cases. 
+    
+    C++标准允许实现省略创建仅用于初始化相同类型的另一个对象的临时对象。指定此选项将禁用该优化,并强制C++在所有情况下调用拷贝构造函数。
+
+
+</xmp>
+
+<p>这里我还进行了测试,发现使用<b>explicit</b>修饰构造函数,在有优化的编译下也不会报错,<b>即编译器优化中出现的隐式类型转换可以通过</b>。但是自己直接用代码写出来的A a = 10是会报错的</p>
+
+<xmp>
+    xplicit关键字用于修饰只有一个参数的构造函数,以防止该构造函数在不经意的情况下被用于隐式类型转换。当构造函数被声明为explicit时,编译器将禁止在需要隐式转换的上下文中使用该构造函数。
+
+    
+</xmp>
+
+
+<h3>1.2 临时对象</h3>
+
+<p>应当注意临时对象的一些特性</p>
+
+<pre>
+    * 直接调用构造函数将产生一个临时对象
+    * 临时对象的生命周期只有一条语句的时间
+    * 临时对象的作用域只在一条语句中
+    * 临时对象是C++中值得警惕的灰色地带
+</pre>
+
+<hr>
+
+<h2>2. 初始化列表初始化类对象</h2>
+
+<p>由下面的函数执行结果可知,使用初始化列表初始类对象成员变量,会省略掉类对象的构造函数调用,可见<b>初始化列表是比较节省资源消耗的</b></p>
+
+<xmp>
+    #include  <iostream>
+    using namespace std;
+
+    class Point{
+        public:
+            Point(int xx=0, int yy=0){
+                X=xx;
+                Y=yy;
+                cout << "Point构造函数" << endl;
+            }
+
+            Point(Point &p){
+                X=p.X;
+                Y=p.Y;
+                cout << "Point拷贝构造函数" << endl;
+            }
+
+            Point& operator=(Point & t){
+                cout << "等号操作符" << endl;
+                this->X = t.X;
+                this->Y = t.Y;
+                return *this;
+            }
+
+            ~Point(){
+                cout << "Point调用析构函数" << endl;
+            }
+
+        private:
+            int X,Y;
+    };
+
+
+    //使用Line类需要初始化内部Point成员变量,那么可以通过 初始化列表 或者 构造函数内部 实现初始化,那么就比较一下两者的区别
+
+    class Line{
+        public:
+        //使用初始化列表和构造函数内部初始化的区别
+        #if 0
+            Line (Point & xp1, Point & xp2):p1(xp1),p2(xp2) { //初始化列表
+                cout << "Line 构造函数" << endl;
+            }
+        #else
+            Line (Point & xp1, Point & xp2) {  //构造函数内部初始化  
+                p1 = xp1;
+                p2 = xp2;
+                cout << "Line 构造函数" << endl;
+            }
+        #endif
+
+            Line(){
+                cout << "默认构造函数" << endl;
+            }
+
+            ~Line(){
+                cout << "Line 析构函数" << endl;
+            }
+
+        private:
+            Point p1,p2;
+    };
+
+    int main(){
+        Point myp1(1,1),myp2(4,5);      
+        cout << "============="<< endl;
+
+        Line line(myp1,myp2);          //主要看这个的输出日志
+        cout << "============="<< endl;
+        return 0;
+    }
+
+    /*
+        使用初始化列表的情况
+    
+                Point构造函数
+                Point构造函数
+                =============
+                Point拷贝构造函数
+                Point拷贝构造函数
+                Line 构造函数
+                =============
+                Line 析构函数
+                Point调用析构函数
+                Point调用析构函数
+                Point调用析构函数
+                Point调用析构函数
+    
+
+        构造函数内部初始化
+    
+                Point构造函数
+                Point构造函数
+                =============
+                Point构造函数
+                Point构造函数
+                等号操作符
+                等号操作符
+                Line 构造函数
+                =============
+                Line 析构函数
+                Point调用析构函数
+                Point调用析构函数
+                Point调用析构函数
+                Point调用析构函数
+    
+    
+        我告诉你上面怎么比较,首先"Line 构造函数"两者都输出了,就不需要比了,然后看使用初始化列表的情况。
+        初始化列表通过这 "Point拷贝构造函数" 一个操作就进行了成员变量初始化,而内部初始化需要先在函数内部构造一个对象,然后使用等号操作符赋值,这样一看很明显初始化列表节约了开销 
+     */
+</xmp>
+
+ 

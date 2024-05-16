@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>有关转换构造函数的知识点</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>由下面题目更好了解<b>转换构造函数</b></p>
+ 
+<xmp>
+	/*
+		题目(转换构造函数)程序运行的结果是DDDDD,请为横线处选择合适的程序
+	*/
+
+	#include <iostream>
+	using namespace std;
+
+	class D{
+		int d;
+		public:
+		D(int x = 1) :d(x){}
+		~D(){cout << "D";}
+	};
+
+	int main(){
+		D d[] = {____________};
+		D * p = new D[2];
+		delete[]p;
+		return 0;
+	}
+</xmp>
+
+<p>发现这道题填写{3,3,3}和{D(3),D(3),D(3)}都是对的,其实我第一时间想到的是后者,因为数组元素的类型是D,所以我需要使用构造函数来构造D类型对象存储到数组中</p>
+
+<p>但是对于第一种就不是很理解了,看了评论区后了解到是C++的构造函数具有类型转换的功能,将{3,3,3}转换为了{D(3),D(3),D(3)},对编译器来说两者没有区别</p>
+
+
+<h2>什么是转换构造函数？</h2>
+
+<p><b>转换构造函数(conversion constructor function)</b>的作用是将一个<b>其他类型的数据转换成一个类的对象</b>。但是<b>需要注意的是转换构造函数只能有一个参数</b>。如果有多个参数,就不是转换构造函数。原因是显然的,如果有多个参数的话,究竟是把哪个参数转换成Complex类的对象呢?</p>
+
+<p>这个要被转换的参数可以是一个标准类型也可以是一个类的对象,如下所示</p>
+
+<xmp>
+	#include  <iostream>
+	using namespace std;
+
+	class Stu{
+		public:
+				Stu(int r){
+					cout << "Stu 构造函数"  << endl;
+				}
+	};
+
+	class Teachear{
+		public:
+				Teachear(Stu s){
+					cout << "Teachear 构造函数" << endl;
+				}
+	};
+
+	int main(){
+		Stu s = 10;
+		Teachear t = s;
+		return 0;
+	}
+
+	/*
+		Stu      构造函数
+		Teachear 构造函数
+	*/
+</xmp>
+
+<p>所以<b>D d[] = {3,3,3};</b>是使用了构造函数的隐式转换功能,当在构造函数前面加上<b>explicit(可以防止类构造函数的隐式自动转换)</b>,此时就会发现D d[] = {3,3,3};是会报错的,但是D d[] = {D(3),D(3),D(3)};依旧是正常</b></p>
+
+
+
+<hr>
+
+
+
+<h2>题目知识点延伸(C++数组对象和构造函数)</h2>
+
+<p>在评论区中发现还有另外一种声音,认为使用D d[] = {D(3),D(3),D(3)};会有临时对象的出现,导致输出结果不同。这也令我深思起来,不过还好有大神解决了这个疑惑</p>
+
+<a href="https://www.cnblogs.com/zhezh/p/3773350.html">C++数组对象和构造函数</a>
+
+<p>定义数组对象以后,对数组中的对象初始化的方式分为两种:</p>
+<xmp>
+	一种方式是在定义的时候用列表初始化
+	A a[5] = {A(1),A(2),A(3),A(4),A(5)};
+
+
+	一种方式是在定义了数组对象以后,再使用临时对象进行初始化
+	A b[5];
+	b[0] = A(1);
+	b[1] = A(2);
+	b[2] = A(3);
+	b[3] = A(4);
+	b[4] = A(5);
+
+
+
+
+
+</xmp>
+
+<p>有趣的是,第一种方式不是使用了临时对象,而是直接对数组中的对象的数据进行初始化,第二种方式是先建立一个临时对象,然后对数组元素一一赋值。</p>
+<xmp>
+	#include<iostream>
+	using namespace std;
+
+	class A{
+		public:
+			A(int n=0){
+				i = n;
+				cout << "构造函数 :" << i << endl;;
+			}
+
+			A& operator=(const A& t){
+				cout << "==赋值操作 :" << t.i << endl;;
+				this->i = t.i;
+				return *this;
+			}
+
+			~A(){
+				cout << "析构函数 :" << i << endl;;
+			}
+		private:
+			int i;
+	};
+
+	int main(){
+		cout << "=============start test one==============" << endl;
+		A a[2] = {A(1),A(2)};
+		cout << "=============end test one================" << endl << endl;
+
+		cout << "============start test two================" << endl;
+		A b[2];
+		b[0] = A(1);
+		b[1] = A(2);
+
+		cout << "==============end test two=================" << endl; 
+
+		return 0;
+	}
+
+	/*
+		=============start test one==============
+		构造函数 :1
+		构造函数 :2
+		=============end test one================
+		
+		============start test two================
+		构造函数 :0
+		构造函数 :0
+		构造函数 :1
+		==赋值操作 :1
+		析构函数 :1
+		构造函数 :2
+		==赋值操作 :2
+		析构函数 :2
+		==============end test two=================
+		析构函数 :2
+		析构函数 :1
+		析构函数 :2
+		析构函数 :1
+	*/
+</xmp>
+
+</body>
+</html>

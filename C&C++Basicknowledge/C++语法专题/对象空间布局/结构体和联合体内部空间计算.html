@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>结构体和联合体内部空间计算</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>1. union内存分析</h1>
+
+<p>union占用的内存大小为union中最大数据类型长度的整数倍,如果不够的需要补全。<b>特别注意数组还是按照元素的数据类型计算。</b></p>
+
+<xmp>
+    /*
+        占用内存大小计算 :   4 * 3 = 12;
+        因为联合体是共用内存的,内存大小应该为最大数据类型的整数倍并且还要大于其中任何一个变量的大小。
+        12是4的倍数且12大于10和4,有两种数据类型 char 1字节  int 4字节
+    */
+    
+    union{
+        char a[10];
+        int  b;
+    }
+    
+    /*
+        占用内存大小计算 :   4 * 4 = 16;
+    */
+    union{
+        char a[13];
+        int  b;
+    }
+</xmp>
+
+<hr>
+
+<h1>2. 结构体内存对齐的规则</h1>
+
+<p>这里要先介绍一下<b>对齐系数</b>的概念。现代计算机中内存空间都是按照<b>字节</b>划分的。从理论上讲似乎对任何类型的变量的访问可以从任何地址开始,但实际情况是在访问特定类型变量的时候经常在特定的内存地址访问,可以提升访问效率,这就需要各种类型数据按照一定的规则在内存空间上排列,而不是顺序的一个接一个的排放,这就是对齐。</p>  
+    
+<p>windwos中提供了<b>#pragma pack(n)</b>来设定变量以n(1,2,4,8...)字节对齐方式。<b>#pragma pack(show)</b>可以查询当前的对齐系数。
+
+<xmp>
+    //#pragma pack(show)是一个特定的预处理器指令,通常在Microsoft的Visual Studio编译器中使用。
+    //它用于显示关于数据结构内存布局的详细信息,特别是关于内存对齐和填充的信息。
+    
+    #include <iostream>
+    using namespace std;
+    
+    #pragma pack(show)
+    
+    int main()
+    {
+        #pragma pack(2)    
+        #pragma pack(show) 
+    
+        return 0;
+    }
+</xmp>
+
+
+<h2>2.1对齐规则讲解</h2>
+
+<p>(1) 第一个成员的地址偏移量是0</p>
+
+<p>(2) 除了第一个成员外,其他成员的偏移位置是<b>变量自身对齐系数(min(成员变量类型所占的字节数,当前设置的对齐系数),比如设置的对齐系数为4,现在要对齐一个double类型的成员,根据前面的方法可知此时的对齐系数是4。再比如要对齐一个char类型的成员,那么此时成员的对齐系数为1。)</b>的最小整倍数。</p>
+    
+<p>(3) 每个成员对齐后,在计算结构体整体大小时,结构体大小要为<b>结构体整体对齐系数(结构体整体对齐系数=min(设置的对齐参数,max(成员数据类型所在字节数)))</b>的最小整倍数,如果不足的话需要在整体的最后面补充字节数。</p>
+    
+<p>(4) 如果嵌套了结构体A,可以把此A也当作一个变量来看待</p>
+
+<p>按照上面讲解,要注意变量自身对齐系数和结构体对齐系数。下面将举几个例子对以上四条做验证,都是在window 64环境下验证,对齐系数设置为4。</p>   
+    
+<h3>2.1.1 例子1</h3>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+
+        struct st1{
+            char  a[9];  //注意 虽然是个数组但是数据类型还是char
+            short b;
+            char  c;
+        };
+
+        int main(){
+            cout << "a offsetof " << offsetof(struct st1, a) << endl;
+            cout << "b offsetof " << offsetof(struct st1, b) << endl;
+            cout << "c offsetof " << offsetof(struct st1, c) << endl;
+            cout << "st1 = " << sizeof(st1) << endl;
+            return 0;
+        }
+
+        /*执行结果
+            a  offsetof 0
+            b  offsetof 10
+            c  offsetof 12
+            st1 = 14
+        */
+
+        /*结果分析
+
+            先看char a[9],根据对齐规则第一条,a的偏移量是0,占据内存0-8位置。
+
+            再看 short b,short类型是2字节,自身的对齐系数是2,所以b的偏移位置是2的最小整倍数,此时偏移位置9不行,位置10可以,b占据内存10-11位置。
+
+            最后看 char c,对齐系数是1,偏移位置为位置12,c占据内存12位置。
+
+            现在整体占据内存0-12,一共是13字节。根据对齐规则第三条,整体大小要是整体对齐系数的最小整倍数,整体对齐系数是2=min(max(1,2),4),整体大小需要补1变为14字节。
+        */
+
+</xmp>
+
+
+<h3>2.1.2 例子2</h3>
+
+<xmp>
+        #include <iostream>
+        #include <stddef.h>
+        using namespace std;
+        #pragma pack(4)
+
+        struct st1{
+            char a[9];
+            char c;
+            short  b;
+        };
+
+        int main(){
+            cout << "a offsetof " << offsetof(struct st1, a) << endl;
+            cout << "c offsetof " << offsetof(struct st1, c) << endl;
+            cout << "b offsetof " << offsetof(struct st1, b) << endl;
+            cout << "st1 = " << sizeof(st1) << endl;
+        }
+
+        /*  执行结果
+            a offsetof 0
+            c offsetof 9
+            b offsetof 10
+            st1 = 12
+            */
+        
+        /*结果分析
+            和例子1很像,不做分析
+        */
+</xmp>
+
+
+<h3>2.1.3 例子3 设置不同的对齐系数</h3>
+
+<xmp>
+        #include <iostream>
+        #include <stddef.h>
+        using namespace std;
+        #pragma pack(4) //或  #pragma pack(8)
+
+        struct st1{
+            char    a;
+            double  b;
+            int     c;
+        };
+
+        int main(){
+            cout << "a offsetof " << offsetof(struct st1, a) << endl;
+            cout << "b offsetof " << offsetof(struct st1, b) << endl;
+            cout << "c offsetof " << offsetof(struct st1, c) << endl;
+            cout << "st1 = " << sizeof(st1) << endl;
+        }
+
+        /*执行结果
+
+            a offsetof 0  设置对齐系数为4
+            b offsetof 4
+            c offsetof 12
+            st1 = 16
+
+            a offsetof 0  设置对齐系数为8
+            b offsetof 8
+            c offsetof 16
+            st1 = 24
+        */
+</xmp>
+
+<h3>2.1.4 例子4 结构体嵌套</h3>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+
+        struct One{
+            char    a;
+            double  b;
+            int     c;
+        };
+
+        union Two{
+            char a[5];
+            int  b[2];
+        };
+
+        struct stu{
+            struct One one;
+            union  Two two;
+            char c[8];
+            float d;
+        };
+
+        int main()
+        {
+            cout << "one offsetof " << offsetof(struct stu, one) << endl;
+            cout << "two offsetof" << offsetof(struct stu, two) << endl;
+            cout << "c   offsetof" << offsetof(struct stu, c) << endl;
+            cout << "d   offsetof" << offsetof(struct stu, d) << endl;
+            cout << "struct stu = " << sizeof(struct stu) << endl;
+            return 0;
+        }
+
+        /*执行结果:
+                one offsetof    0
+                two offsetof    16
+                c   offsetof    24
+                d   offsetof    32
+                struct stu = 36
+        */
+
+        /*结果分析: 
+            先看 one ,自身对齐系数是4,这是一个结构体变量,经过计算它所占的内存空间是16,它是结构体中的第一个元素,所以偏移量为0
+            再看 two , 自身对齐系数是4,这是一个联合体,它所占的内存是8个字节,它的自身对齐参数是4,它排在one后面,偏移量正好是16,不需要额外偏移
+            接着看 c,自身对齐系数是1,排在two后面,偏移量是24
+            最后看 d,自身对齐系数是4,排在c后面,对应偏移量32,正好符号倍数关系,所以偏移量就是32,注意float占四个字节
+
+            当前所占空间大小是36字节(0-35),接下来看看是否需要补全字节,整体对齐系数是min(4,max(one,two,c,d)) = 4,所以不需要补全
+        */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+
+        struct One{
+            char    a;
+            double  b;
+            int     c;
+        };
+
+        union Two{
+            char a[5];
+            int  b[2];
+        };
+
+        struct stu{
+            union  Two two;    //注意这里换了个位置
+            struct One one;
+            char c[8];
+            float d;
+        };
+
+        int main()
+        {
+            cout << "two offsetof" << offsetof(struct stu, two) << endl;
+            cout << "one offsetof " << offsetof(struct stu, one) << endl;
+            cout << "c   offsetof" << offsetof(struct stu, c) << endl;
+            cout << "d   offsetof" << offsetof(struct stu, d) << endl;
+            cout << "struct stu = " << sizeof(struct stu) << endl;
+            return 0;
+        }
+
+        /*
+            two offsetof0
+            one offsetof 8
+            c   offsetof24
+            d   offsetof32
+            struct stu = 36
+         */
+        
+</xmp>
+    
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>【C++】子类的继承类型对访问父类成员的影响</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<xmp>
+        #include <iostream>
+        using namespace std;
+        
+        class Father
+        {
+                public:      int f_pub;
+                protected:   int f_pro;
+                private:     int f_pri;
+        };
+            
+        class Son : private Father
+        {
+            public:
+                void  fun1(){
+                    cout << " f_pub = " << f_pub;
+                }
+        
+                void  fun2(){
+                    cout << " f_pro = " << f_pro;
+                }
+        
+                // void  fun3(){    无法访问基类的私有成员
+                //   cout << " f_pri = " << f_pri;
+                // }
+        };
+            
+            
+        class Son2 : public Father
+        {
+            public:
+                    void  fun1(){
+                        cout << " f_pub = " << f_pub;
+                    }
+        
+                    void  fun2(){
+                        cout << " f_pro = " << f_pro;
+                    }
+        
+                    // void  fun3(){   无法访问基类的私有成员
+                    //     cout << " f_pri = " << f_pri;
+                    // }
+        };
+        
+        class Son3 : protected Father
+        {
+            public:
+                    void  fun1(){
+                        cout << " f_pub = " << f_pub;
+                    }
+        
+                    void  fun2(){
+                        cout << " f_pro = " << f_pro;
+                    }
+        
+                    // void  fun3(){  无法访问基类的私有成员
+                    //     cout << " f_pri = " << f_pri;
+                    // }
+        };
+        
+        
+        int main(){
+        
+            //私有继承父类
+            Son son;
+        //    son.f_pub = 1;  无法访问
+        //    son.f_pro = 2;
+        //    son.f_pri = 3;
+        
+            //共有继承父类
+            Son2 son2;
+            son2.f_pub = 1;
+        //    son2.f_pro = 2;  无法访问
+        //    son2.f_pri = 3;
+        
+            //保护继承
+            Son3 son3;
+        //    son3.f_pub = 1;  无法访问
+        //    son3.f_pro = 2;
+        //    son3.f_pri = 3;
+        
+            return 0;
+        }
+</xmp>
+ 
+
+<p><b>总结</b></p>
+
+<table border="1px">
+    <tr> <td>继承类型</td> <td>基类成员类型</td> <td>基类成员在子类中的类型变化</td> <td>子类内部访问基类成员权限</td> <td>子类对象访问基类成员权限</td> </tr>
+
+    <tr> <td>公有继承</td> <td>公有类型</td> <td>公有类型</td> <td>子类内部可以访问</td> <td>子类对象可以访问</td> </tr>
+    <tr> <td>公有继承</td> <td>保护类型</td> <td>保护类型</td> <td>子类内部可以访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>公有继承</td> <td>私有类型</td> <td>私有类型</td> <td>子类内部不能访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>--</td> <td>--</td> <td>--</td> <td>--</td> <td>--</td> </tr>
+    <tr> <td>保护继承</td> <td>公有类型</td> <td>保护类型</td> <td>子类内部可以访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>保护继承</td> <td>保护类型</td> <td>保护类型</td> <td>子类内部可以访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>保护继承</td> <td>私有类型</td> <td>私有类型</td> <td>子类内部不能访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>--</td> <td>--</td> <td>--</td> <td>--</td> <td>--</td> </tr>
+    <tr> <td>私有继承</td> <td>公有类型</td> <td>私有继承</td> <td>子类内部不能访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>私有继承</td> <td>保护类型</td> <td>私有继承</td> <td>子类内部不能访问</td> <td>子类对象不能访问</td> </tr>
+    <tr> <td>私有继承</td> <td>私有类型</td> <td>私有继承</td> <td>子类内部不能访问</td> <td>子类对象不能访问</td> </tr>
+
+ </table>
+
+</body>
+</html>

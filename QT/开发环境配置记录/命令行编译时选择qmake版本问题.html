@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>命令行编译时选择qmake版本问题</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+
+
+<p>在使用命令行编译过程中,电脑中可能有多个版本的qmake,此时需要使用<b>export QT_SELECT</b>设置版本,刚开始没有找到,经过他人帮助成功运行脚本,针对此问题进行记录。</p>
+
+<xmp>
+
+    #下面时运行时的操作过程
+    
+    #脚本运行但是提示招不到对应的qmake版本
+    qmake版本
+    qmake: could not find a Qt installation of 'qt_5.13.0'
+    
+    #查看 qmake 版本,使用qtchooser 列出电脑中的qmake版本
+    xxxxx@xxxxx:/opt/video-code/videolib_root$ qtchooser -l
+    4
+    5
+    default
+    qt4-x86_64-linux-gnu
+    qt4
+    qt5-x86_64-linux-gnu
+    qt5
+    
+    #这里注册我要使用的qmake版本  我要使用的是qt_5.13.0
+    xxxxx@xxxxx:/opt/Qt5.13.0/5.13.0/gcc_64/bin$ qtchooser -install qt_5.13.0 /opt/Qt5.13.0/5.13.0/gcc_64/bin/qmake
+    
+    
+    #再次查看,可以发现有了我自己注册的版本
+    xxxxx@xxxxx:/opt/Qt5.13.0/5.13.0/gcc_64/bin$ qtchooser -l
+    4
+    5
+    default
+    qt4-x86_64-linux-gnu
+    qt4
+    qt5-x86_64-linux-gnu
+    qt5
+    qt_5.13.0
+    
+    
+    
+    #对设置结果进行校验
+    xxxxx@xxxxx:/opt/Qt5.13.0/5.13.0/gcc_64/bin$ export QT_SELECT=qt_5.13.0
+    xxxxx@xxxxx:/opt/Qt5.13.0/5.13.0/gcc_64/bin$ qmake -v
+    QMake version 3.1
+    
+</xmp>
+ 
+</body>
+</html>

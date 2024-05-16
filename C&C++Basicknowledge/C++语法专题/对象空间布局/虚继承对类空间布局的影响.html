@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>虚继承对类空间布局的影响</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>验证类中存在虚继承对类空间布局的影响,运行环境 debug vc2019 32位</p>
+
+<a href="https://blog.csdn.net/effort_study/article/details/119488496">【网络链接】c++对象模型05:虚继承内存布局</a>
+
+<p>在下面的例子中,虚继承会使得类内部出现虚基类指针(<b>vbptr</b>)和虚基类表(<b>vbtable</b>),目前看虚基类指针和虚函数指针计算占用空间方法相同,虚基类指针则不占用类空间。</p>
+
+<p>虚基类表由多个条目组成,条目中存放的是偏移值。第一个条目存放虚基类表指针(vbptr)所在地址到该类内存首地址的偏移值。虚基类表的第二、第三…个条目依次为该类的最左虚继承父类、次左虚继承父类…的内存地址相对于虚基类表指针的偏移值。
+
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+        
+        
+        class A0 {
+        
+        };
+        
+        class A1 {
+            void fun(){};
+        };
+        
+        class A2 : virtual public A1 {
+        
+        };
+        
+        class A3 : virtual public A1 {
+        
+        };
+        
+        class A4 : public A2, public A3 {
+        
+        };
+        
+        int main() {
+            cout << "空类 size A0 = " << sizeof(A0) << endl;
+            cout << "size A1 = " << sizeof(A1) << endl;
+            cout << "size A2 = " << sizeof(A2) << endl;
+            cout << "size A3 = " << sizeof(A3) << endl;
+            cout << "size A4 = " << sizeof(A4) << endl;
+            return 0;
+        }
+        
+        /*
+        
+        执行结果
+        
+        空类 size A0 = 1
+        size A1 = 1
+        size A2 = 4
+        size A3 = 4
+        size A4 = 8
+        
+        ===================================
+        class A1        size(1):
+                +---
+                +---
+        
+        
+        ===================================
+        class A2        size(4):
+                +---
+         0      | {vbptr}
+                +---
+                +--- (virtual base A1)
+                +---
+        
+        A2::$vbtable@:
+         0      | 0
+         1      | 4 (A2d(A2+0)A1)
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1       4       0       4 0
+        
+        
+        
+        ====================================
+        class A3        size(4):
+                +---
+         0      | {vbptr}
+                +---
+                +--- (virtual base A1)
+                +---
+        
+        A3::$vbtable@:
+         0      | 0
+         1      | 4 (A3d(A3+0)A1)
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1       4       0       4 0
+        
+        
+        
+        ====================================
+        class A4        size(8):
+                +---
+         0      | +--- (base class A2)
+         0      | | {vbptr}
+                | +---
+         4      | +--- (base class A3)
+         4      | | {vbptr}
+                | +---
+                +---
+                +--- (virtual base A1)
+                +---
+        
+        A4::$vbtable@A2@:
+         0      | 0
+         1      | 8 (A4d(A2+0)A1)
+        
+        A4::$vbtable@A3@:
+         0      | 0
+         1      | 4 (A4d(A3+0)A1)
+        vbi:       class  offset o.vbptr  o.vbte fVtorDisp
+                      A1       8       0       4 0
+        */
+</xmp>
+
+
+</body>
+</html>

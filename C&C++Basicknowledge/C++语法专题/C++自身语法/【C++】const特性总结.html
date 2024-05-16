@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>【C++】const特性总结</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>根据const修饰的对象不同,我们将其分为顶层const和底层const。</p>
+
+<p>顶层const : 当const修饰的是对象本身,<b>即对象本身不可被修改,我们称之为顶层const</b>。</p>
+
+<p>底层const : 当const修饰的是对象所指向的内容,<b>即对象指向的内容不可被修改,我们称之为底层const</b>。</p>
+
+<p><b>举例说明:</b></p>
+
+<p>const int a=10 就是一个顶层const,因为a本身的值不能改变。</p>
+
+<p>int * const p 是一个顶层const,指针不能再指向其他空间</p>
+
+<p>int const * p 是一个底层const,因为p指向的内容不能改变。</p>
+
+<p>常量引用相当于 const int * const p 即是顶层const也是底层const 【TODO 和网上说的不一样,还需要论证】
+
+<hr>
+
+<h1>1. const修饰普通变量</h1>
+
+<p>const修饰基本类型数据类型时,const可以⽤在类型说明符前,也可以⽤在类型说明符后,其结果是⼀样的。在使⽤这些常量的时候,不能改变这些常量的值。</p>
+
+
+<h1>2. const修饰成员变量</h1>
+
+<p>被修饰的成员变量必须在构造函数初始化列表初始化,且在后续的运行中不能再被修改</p>
+
+
+
+<h1>3. const修饰指针变量</h1>
+
+<p>const修饰指针会有两种情况,即<b>指向常量的指针int const * p</b>和<b>常量指针int * const p</b></p>
+
+<p>从网上找到一个<b>const</b>修饰指针的技巧。谁在const的左边就修饰谁,如果const的左边没有任何东西,就修饰右边的第一个值。忽略类型的存在,比如int char</p>
+
+<p>所以int const * p修饰的是*p,即指针指向的值,指针可以修改但是不能修改值,int * const p修饰的是*,即指针不能修改,但是值能修改</p>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+
+        int main(){
+                
+                int pp = 10;
+                int pp2 = 20;
+                int const * p = &pp;
+                p = &pp2;
+                //*p = 100;  报错 指针指向的值不能修改
+
+                int qq = 10;
+                int qq2 = 20;
+                int * const q = & qq;
+                // q = &qq;  报错 指针不能在指向其空间
+                *q = 100;
+
+                return 0;
+        }
+</xmp>
+
+
+
+<h1>4. const修饰函数形参</h1>
+
+<p>函数形参一般分为引用、指针和值传递,下面针对这三种情况进行分析。<b>主要关注点是const修饰参数会造成重载</b>,特殊点会在各自的小节中再说。</p>
+
+<p><a href="https://www.cnblogs.com/qingergege/p/7609533.html">【网络链接】C++中const用于函数重载</a></p>
+
+<h2><p>4.1 const修饰引用形参</p></h2>
+
+<p>1、参考<a href="../../../C&C++Basicknowledge/C++语法专题/C++自身语法/【C++11】左值与右值.md">【本地链接】【C++11】左值与右值-已经了解的引用知识(来自 c++ primer plus)部分</a>,了解常量引用<br>
+
+<p>2、修饰引用形参还会产生函数重载,如下</p>
+<pre>
+        fun(const int &i) 
+        fun(int &i)        //是重载 
+</pre>
+
+
+<h2><p>4.2 const修饰指针形参</p></h2>
+
+<p>注意const修饰指针的位置,修饰在正确的位置才会产生函数重载</p>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        
+        //指向常量的指针  可以
+        void fun(int const * p){} //本质上是const int  【TODO 本质是什么是我自己猜测】
+        void fun(int * p){}       //int *
+        
+        //常量指针  不可以 
+        void fun2(int * const p){} //本质上是int *     【TODO 本质是什么是我自己猜测】
+        void fun2(int * p){}       //int *
+
+        int main(){
+                return 0;
+        }
+        
+        /*编译结果:
+                test.cpp:11:6: error: redefinition of 'void fun2(int*)'
+                11 | void fun2(int *  p){}
+                        |      ^~~~
+                test.cpp:9:6: note: 'void fun2(int*)' previously defined here
+                9 | void fun2(int * const p){}
+                        |      ^~~~
+        */
+</xmp>
+
+
+
+<h2><p>4.3 const修饰值传递</p></h2>
+
+<p>没有意义,值传递参数会拷贝副本在函数中使用,根本不会修改原值。也不会产生重载</p>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+
+        void fun(int  a){
+        }
+
+        void fun(const int a){ //不是重载  编译会报错
+        }
+
+        int main(){
+           return 0;
+        }
+</xmp>
+
+
+
+<h1>5. const修饰返回值【TODO  有空研究一下】</h1>
+
+<p>保护指针指向的内容或引用的内容不被修改,也常用于运算符重载。归根究底就是<b>使得函数调用表达式不能作为左值</b>。</p>
+
+
+
+
+
+<h1>6. const修饰函数</h1>
+
+<p>这里修饰的函数指的是<b>C++类中的成员函数</b>,普通函数是不能被const修饰的。</p>
+
+<p>类的成员函数后面加const,表明这个函数不会对这个类对象成员变量(<b>准确地说是非静态成员变量</b>)作任何改变,只能读取,不能修改。</p>
+
+<p>const修饰成员函数实际上修饰的是this指针,this指针原本是一个指针常量T * const,用const修饰后就变成了const T * const,此时this指针不能修改指向地址对应的值,自然const修饰的成员函数内部不能更改非静态成员变量值。</p>
+
+<p><b>const修饰类成员函数还会产生函数重载。</b></p>
+
+<xmp>
+        #include <ctime>
+        #include <iostream>
+        using namespace std;
+        
+        class Test{
+                int x;
+                static int y;
+
+                public:
+                Test (int i):x(i) { }
+                void fun2() const{
+                    //this->x = 10; 在编译的时候会报错,因为修改了成员变量 如果使用 mutable 修饰x则不会错                  
+                    y = 20;         //静态成员变量修改不报错
+                }
+        };
+        
+        int Test::y = 10;
+        
+        int main(){
+                return 0;
+        }
+</xmp>
+
+
+
+
+
+<h1>7. const修饰类对象</h1>
+
+<p>const类对象可以调用const成员函数,而不能调用非const修饰的函数。</p>
+
+<p>非const类对象既可以调用const成员函数,也可以调用非const修饰的函数(优先调用)。</p>
+
+<xmp>
+        #include<iostream>
+        using namespace std;
+
+        class Test{
+        public:
+                Test(){}
+
+                //下面两个函数发生了重载,那么实际使用会调用哪个？
+                void move(int i) {   
+                        cout << "move" << endl;
+                }
+
+                void move(int i) const{
+                        cout << "move const" << endl;
+                }
+        };
+
+        int main(){
+
+                Test t1;
+                const Test t2;
+
+                t1.move(1);    //非const类对象优先先调用非const修饰函数
+                t2.move(1);    //const类对象优先调用const修饰函数
+                
+                return 0;
+        }
+
+        /* 执行结果:
+        move
+        move const
+        */
+</xmp>
+
+</body>
+</html>
+
+
+

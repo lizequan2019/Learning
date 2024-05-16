@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QTabWidget" name="tab_selector">
+        <property name="currentIndex">
+         <number>5</number>
+        </property>
+        <widget class="QWidget" name="tab_typeselector">
+         <attribute name="title">
+          <string>类型选择器(继承)</string>
+         </attribute>
+         <widget class="QFrame" name="frm_typeselect">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>30</y>
+            <width>120</width>
+            <height>80</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+         <widget class="QLabel" name="lab_typeselect">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>280</y>
+            <width>161</width>
+            <height>21</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>这个控件在tabwgt内部</string>
+          </property>
+         </widget>
+         <widget class="QTextEdit" name="edit_typeselect">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>140</y>
+            <width>121</width>
+            <height>81</height>
+           </rect>
+          </property>
+          <property name="html">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Ubuntu'; font-size:11pt;&quot;&gt;这是edit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+         <widget class="QWidget" name="wgt_typeselect" native="true">
+          <property name="geometry">
+           <rect>
+            <x>190</x>
+            <y>30</y>
+            <width>321</width>
+            <height>191</height>
+           </rect>
+          </property>
+          <widget class="QLabel" name="lab_typeselect_in_wgt">
+           <property name="geometry">
+            <rect>
+             <x>10</x>
+             <y>20</y>
+             <width>301</width>
+             <height>20</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>这个控件在一个wgt内部，wgt在tabwgt内部</string>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QWidget" name="layoutWidget">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>350</y>
+            <width>157</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <property name="spacing">
+            <number>20</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>我在部局中</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>俺也一样</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_attriselector">
+         <attribute name="title">
+          <string>属性选择器</string>
+         </attribute>
+         <widget class="QPushButton" name="btn_attrselector_red">
+          <property name="geometry">
+           <rect>
+            <x>221</x>
+            <y>227</y>
+            <width>80</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>red</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="btn_attrselector_green">
+          <property name="geometry">
+           <rect>
+            <x>221</x>
+            <y>338</y>
+            <width>80</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>green</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="btn_attrselector_blue">
+          <property name="geometry">
+           <rect>
+            <x>221</x>
+            <y>301</y>
+            <width>80</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>blue</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="btn_attrselector_yellow">
+          <property name="geometry">
+           <rect>
+            <x>221</x>
+            <y>264</y>
+            <width>80</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>yellow</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_noinherselector">
+         <attribute name="title">
+          <string>非子类选择器(非继承)</string>
+         </attribute>
+         <widget class="QWidget" name="wgt_noinhersecletor" native="true">
+          <property name="geometry">
+           <rect>
+            <x>40</x>
+            <y>30</y>
+            <width>120</width>
+            <height>80</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QFrame" name="frm_noinherselector">
+          <property name="geometry">
+           <rect>
+            <x>40</x>
+            <y>140</y>
+            <width>120</width>
+            <height>80</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+         <widget class="QLabel" name="lab_noinherselector">
+          <property name="geometry">
+           <rect>
+            <x>50</x>
+            <y>330</y>
+            <width>67</width>
+            <height>17</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+         <widget class="QTextEdit" name="edt_noingerselecot">
+          <property name="geometry">
+           <rect>
+            <x>170</x>
+            <y>320</y>
+            <width>104</width>
+            <height>70</height>
+           </rect>
+          </property>
+          <property name="html">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Ubuntu'; font-size:11pt;&quot;&gt;edit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+         <widget class="QWidget" name="wgt_noinhersecletor_2" native="true">
+          <property name="geometry">
+           <rect>
+            <x>200</x>
+            <y>30</y>
+            <width>120</width>
+            <height>80</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QFrame" name="frm_noinherselector_2">
+          <property name="geometry">
+           <rect>
+            <x>200</x>
+            <y>140</y>
+            <width>121</width>
+            <height>81</height>
+           </rect>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::StyledPanel</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Raised</enum>
+          </property>
+         </widget>
+         <widget class="QLabel" name="lab_noinherselector_2">
+          <property name="geometry">
+           <rect>
+            <x>50</x>
+            <y>370</y>
+            <width>67</width>
+            <height>17</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>TextLabel</string>
+          </property>
+         </widget>
+         <widget class="QTextEdit" name="edt_noingerselecot_2">
+          <property name="geometry">
+           <rect>
+            <x>310</x>
+            <y>320</y>
+            <width>104</width>
+            <height>70</height>
+           </rect>
+          </property>
+          <property name="html">
+           <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+hr { height: 1px; border-width: 0; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'Ubuntu'; font-size:11pt;&quot;&gt;edit&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_directselector">
+         <attribute name="title">
+          <string>直接后代选择器</string>
+         </attribute>
+         <widget class="QWidget" name="wgt_one" native="true">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>60</y>
+            <width>621</width>
+            <height>361</height>
+           </rect>
+          </property>
+          <widget class="QPushButton" name="pushButton">
+           <property name="geometry">
+            <rect>
+             <x>30</x>
+             <y>20</y>
+             <width>89</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="wgt_two" native="true">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>80</y>
+             <width>531</width>
+             <height>251</height>
+            </rect>
+           </property>
+           <widget class="QPushButton" name="pushButton_2">
+            <property name="geometry">
+             <rect>
+              <x>20</x>
+              <y>20</y>
+              <width>89</width>
+              <height>25</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>two</string>
+            </property>
+           </widget>
+           <widget class="QWidget" name="wgt_three" native="true">
+            <property name="geometry">
+             <rect>
+              <x>50</x>
+              <y>60</y>
+              <width>431</width>
+              <height>171</height>
+             </rect>
+            </property>
+            <widget class="QPushButton" name="pushButton_3">
+             <property name="geometry">
+              <rect>
+               <x>40</x>
+               <y>40</y>
+               <width>89</width>
+               <height>25</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>three</string>
+             </property>
+            </widget>
+           </widget>
+          </widget>
+          <widget class="QPushButton" name="pushButton_4">
+           <property name="geometry">
+            <rect>
+             <x>140</x>
+             <y>20</y>
+             <width>89</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one_2</string>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QPushButton" name="pushButton_5">
+          <property name="geometry">
+           <rect>
+            <x>90</x>
+            <y>20</y>
+            <width>89</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>参考</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_laterselector">
+         <attribute name="title">
+          <string>后代选择器</string>
+         </attribute>
+         <widget class="QPushButton" name="pushButton_6">
+          <property name="geometry">
+           <rect>
+            <x>90</x>
+            <y>30</y>
+            <width>89</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>参考</string>
+          </property>
+         </widget>
+         <widget class="QWidget" name="wgt_later_one" native="true">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>70</y>
+            <width>621</width>
+            <height>361</height>
+           </rect>
+          </property>
+          <widget class="QPushButton" name="pushButton_7">
+           <property name="geometry">
+            <rect>
+             <x>30</x>
+             <y>20</y>
+             <width>89</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="wgt_later_two" native="true">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>80</y>
+             <width>531</width>
+             <height>251</height>
+            </rect>
+           </property>
+           <widget class="QPushButton" name="pushButton_8">
+            <property name="geometry">
+             <rect>
+              <x>20</x>
+              <y>20</y>
+              <width>89</width>
+              <height>25</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>two</string>
+            </property>
+           </widget>
+           <widget class="QWidget" name="wgt_later_three" native="true">
+            <property name="geometry">
+             <rect>
+              <x>50</x>
+              <y>60</y>
+              <width>431</width>
+              <height>171</height>
+             </rect>
+            </property>
+            <widget class="QPushButton" name="pushButton_9">
+             <property name="geometry">
+              <rect>
+               <x>40</x>
+               <y>40</y>
+               <width>89</width>
+               <height>25</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>three</string>
+             </property>
+            </widget>
+           </widget>
+          </widget>
+          <widget class="QPushButton" name="pushButton_10">
+           <property name="geometry">
+            <rect>
+             <x>140</x>
+             <y>20</y>
+             <width>89</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one_2</string>
+           </property>
+          </widget>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="tab_laterselectorwithid">
+         <attribute name="title">
+          <string>后代选择器(跟随id选择器)</string>
+         </attribute>
+         <widget class="QWidget" name="wgt_laterwithid_one" native="true">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>60</y>
+            <width>621</width>
+            <height>361</height>
+           </rect>
+          </property>
+          <widget class="QPushButton" name="btn_one">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>30</y>
+             <width>89</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one</string>
+           </property>
+          </widget>
+          <widget class="QWidget" name="wgt_laterwithid_two" native="true">
+           <property name="geometry">
+            <rect>
+             <x>40</x>
+             <y>80</y>
+             <width>531</width>
+             <height>251</height>
+            </rect>
+           </property>
+           <widget class="QPushButton" name="btn_two">
+            <property name="geometry">
+             <rect>
+              <x>50</x>
+              <y>20</y>
+              <width>89</width>
+              <height>25</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>two</string>
+            </property>
+           </widget>
+           <widget class="QWidget" name="wgt_laterwithid_three" native="true">
+            <property name="geometry">
+             <rect>
+              <x>50</x>
+              <y>60</y>
+              <width>431</width>
+              <height>171</height>
+             </rect>
+            </property>
+            <widget class="QPushButton" name="btn_three">
+             <property name="geometry">
+              <rect>
+               <x>40</x>
+               <y>30</y>
+               <width>89</width>
+               <height>25</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>three</string>
+             </property>
+            </widget>
+            <widget class="QPushButton" name="btn_three_ref">
+             <property name="geometry">
+              <rect>
+               <x>150</x>
+               <y>30</y>
+               <width>101</width>
+               <height>25</height>
+              </rect>
+             </property>
+             <property name="text">
+              <string>three_ref</string>
+             </property>
+            </widget>
+           </widget>
+           <widget class="QPushButton" name="btn_two_ref">
+            <property name="geometry">
+             <rect>
+              <x>160</x>
+              <y>20</y>
+              <width>89</width>
+              <height>25</height>
+             </rect>
+            </property>
+            <property name="text">
+             <string>two_ref</string>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QPushButton" name="btn_one_ref">
+           <property name="geometry">
+            <rect>
+             <x>150</x>
+             <y>30</y>
+             <width>91</width>
+             <height>25</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>one_ref</string>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QPushButton" name="btn_ref">
+          <property name="geometry">
+           <rect>
+            <x>60</x>
+            <y>20</y>
+            <width>89</width>
+            <height>25</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>参考</string>
+          </property>
+         </widget>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QPushButton" name="btn_loadqss">
+          <property name="text">
+           <string>加载qss</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_unlaodqss">
+          <property name="text">
+           <string>卸载qss</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

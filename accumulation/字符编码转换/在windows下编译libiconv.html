@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>在windows下编译libiconv库</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>libiconv是一个基于GNU协议的开源库,主要用于解决多语言编码处理转换等应用问题。在linux系统使用比较方便,但是windows下使用需要进行源码编译。这里我是使用libiconv的1.15版本源码和VS2019默认工具集配置进行编译。</p>
+
+<p>首先需要用VS2019创建一个空项目,根目录为libiconv。</p>
+
+<p>在解压源码文件后,我以libiconv-1.15为根目录,需要拷贝几个文件到上面创建的空项目。</p>
+
+<pre>
+
+        libiconv-1.15/config.h.in  ->  libiconv/config.h
+
+        libiconv-1.15/libcharset/include/localcharset.h.in -> libiconv/localcharset.h
+
+        libiconv-1.15/libcharset/lib/localcharset.c -> libiconv/localcharset.c
+
+        libiconv-1.15/include/iconv.h.in -> libiconv/iconv.h
+
+        libiconv-1.15/srclib/localcharset.h -> libiconv/localcharset.h
+
+        libiconv-1.15/lib(整个文件夹) -> libiconv/lib
+
+</pre>
+
+<p>将上面拷贝的文件添加到空项目中,lib文件夹中只需要添加iconv.c。</p>
+
+<p>接着需要修改VS2019项目的一些属性</p>
+
+<pre>
+
+        项目属性 : 常规->配置类型->静态库选择(.lib)
+        项目属性 : C/C++ ->附加包含目录填入$(ProjectDir);
+
+</pre>
+
+
+<p>最后修改编译出现的错误。</p>
+
+<pre>
+
+        1. 修改iconv.h文件,删除掉所有的 @ 符号 (14处)
+
+        2. 修改iconv.h文件,[extern DLL_VARIABLE int _libiconv_version;](24行) 改为 [extern /* DLL_VARIABLE */ int _libiconv_version;]
+
+        3. 修改iconv.h文件,[extern size_t iconv (iconv_t cd, ICONV_CONST char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t*outbytesleft);] 改为
+                           [extern size_t iconv (iconv_t cd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t*outbytesleft);]
+
+        4. 修改iconv.c文件,[size_t iconv (iconv_t icd, ICONV_CONST char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft)]改为
+                           [size_t iconv (iconv_t icd, const char* * inbuf, size_t *inbytesleft, char* * outbuf, size_t *outbytesleft)]
+        
+        4. 修改localcharset.c文件,注释  # include "configmake.h"
+
+        5. 在项目属性 C/C++ -> 预处理器 -> 预处理器定义 增加_CRT_SECURE_NO_WARNINGS
+
+</pre>
+
+<p>此时编译可以成功,生成一个libiconv.lib库,体积大约3145K</p>
+
+
+</body>
+</html>

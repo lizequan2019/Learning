@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>结构体中存在不定长数组成员</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h2>1.参考资料</h2>
+
+<a href="https://www.cnblogs.com/pluviophile/p/7571410.html">【网络链接】柔性数组</a>
+
+<h2>2.笔记记录背景</h2>
+
+<p>在网络通讯过程中,需要发送用户数据,一般发送的是字符串数据,为了方便发送数据,我将数据都放到了结构体中,这样可以一块发送过去。像下面这样:</p>
+
+<xmp>
+	struct {
+	    int a;
+	    int b;
+	};
+</xmp>
+
+<p>但是只是这样简单的数据结构是不能满足使用的,int、bool这种成员变量都只能保存一些属性,大部分数据还是要存储到字符串数组中的,所以结构体如下:</p>
+
+<xmp>
+	struct {
+	    int a;
+	    int b;
+	    char c[100];
+	}
+</xmp>
+
+<p>那么问题又来了,字符串仅仅100个字符就够了吗?很明显我也不知道字符串数组需要预留多大的空间100还是10000个字节?此时就需要使用不定长数组了。</p>
+
+<br>
+<br>
+
+<h2>3.不定长数组的使用</h2>
+
+<p>道理还是比较简单的,既然字符串数组的空间是动态变化的,那么就是在程序运行时malloc堆空间,然后再放需要的数据。</p>
+
+<p>有两种方法去实现不定长数组,第一种是在结构体中使用指针指向新开辟的空间,第二种是使用柔性数组</p>
+
+
+<h3>3.1实现方法1-指针</h3>
+
+<xmp>
+		#include <iostream>
+        #include <memory>
+        #include <stdlib.h>
+        #include <stdio.h>
+        #include <string.h>
+        using namespace std;
+
+        char b[] = "123456789";
+        char c[] = "987654321";
+
+        typedef struct{
+            int  a;
+            char *b;
+            char *c;
+        }STRU;
+
+        int main(){
+
+            int len = sizeof(STRU);
+            int len_b = strlen(b)+1;    //+1是因为字符串有一个字节存放'\0'
+            int len_c = strlen(c)+1;
+        
+            //开辟堆空间 先只开辟结构体本身的
+            STRU *stru = (STRU *)malloc(len);
+            memset(stru, 0, len);
+        
+            //再开辟字符串len_b的
+            char *cb = (char *)malloc(len_b);	// 申请 len_b 长的内存并初始化为0
+            memset(cb,'\0',len_b);
+            memcpy(cb, b, len_b);				// 将 b 的内容复制到 cb 中
+        
+            //最后开辟字符串len_c的
+            char *cc = (char *)malloc(len_c);// 申请 len_c 长的内存并初始化为0
+            memset(cc,'\0',len_c);
+            memcpy(cc, c, len_c);				// 将 c 的内容复制到 cc 中
+
+            printf("cb 的地址为:%x \n", cb);
+            printf("cc 的地址为:%x \n", cc);
+
+            printf("\n\n");
+
+            printf("Before - STRU 的地址为:%x \n", stru);
+            printf("Before - STRU_B 的地址为:%x \n", &(stru->b));
+            printf("Before - STRU_C 的地址为:%x \n", &(stru->c));
+            printf("Before - STRU_B 指向的地址为:%x \n", stru->b);
+            printf("Before - STRU_C 指向的地址为:%x \n", stru->c);
+
+            printf("\n\n");
+        
+            stru->b = cb;
+            stru->c = cc;
+        
+            printf("After - STRU 的地址为:%x \n", stru);
+            printf("After - STRU_B 的地址为:%x \n", &(stru->b));
+            printf("After - STRU_C 的地址为:%x \n", &(stru->c));
+            printf("After - STRU_B 指向的地址为:%x \n", stru->b);
+            printf("After - STRU_C 指向的地址为:%x \n", stru->c);
+
+            printf("\n\n");
+        
+        
+            cout << ">>> b: " << stru->b << endl;
+            cout << ">>> c: " << stru->c << endl;
+
+            //销毁空间
+            free(stru);
+            stru = NULL;
+
+            free(cb);
+            cb = NULL;
+
+            free(cc);
+            cc = NULL;
+
+            return 0;
+        }
+
+		/*
+			cb 的地址为:b3f1fed0 
+			cc 的地址为:b3f1fef0 
+			
+			
+			Before - STRU 的地址为:b3f1feb0 
+			Before - STRU_B 的地址为:b3f1feb8 
+			Before - STRU_C 的地址为:b3f1fec0 
+			Before - STRU_B 指向的地址为:0 
+			Before - STRU_C 指向的地址为:0 
+			
+			
+			After - STRU 的地址为:b3f1feb0 
+			After - STRU_B 的地址为:b3f1feb8       
+			After - STRU_C 的地址为:b3f1fec0 
+			After - STRU_B 指向的地址为:b3f1fed0 #char *b的堆空间地址
+			After - STRU_C 指向的地址为:b3f1fef0 
+			
+			
+			>>> b: 123456789
+			>>> c: 987654321		
+		 */
+</xmp>
+
+<p>使用指针可以实现存储不定长数据,但是还需要注意销毁指针指向的堆空间,否则就会出现内存泄漏。</p>
+
+
+<h3>3.2柔性数组</h3>
+
+<p>考虑上面<b>使用指针</b>的情况,在程序结束的时候,需要额外的销毁结构体成员变量的空间。</p>
+
+<p>此时可以使用<b>柔性数组</b>,如下,通过使用<b>柔性数组</b>,结构体中成员变量的地址是连续的,使用完毕后仅仅需要销毁整个结构体空间即可。</p>
+
+<p><b>注意由于声明内存连续性的关系,柔性数组成员必须定义在结构体的最后一个,并且不能是唯一的成员</b></p>
+
+<xmp>
+		#include <iostream>
+		#include <memory>
+		#include <stdlib.h>
+		#include <stdio.h>
+		#include <string.h>
+		using namespace std;
+		
+		char bb[] = "01234456789";
+		
+		typedef struct{
+			int  a;
+			char b[0]; //柔性数组
+		}STRU;
+		
+		typedef struct{
+			int  a;
+			char*b;
+		}STRU2;
+		
+		int main(){
+		
+			printf("STRU 结构体大小 %d\n",sizeof(STRU));
+			printf("STRU2结构体大小 %d\n",sizeof(STRU2));
+		
+			//柔性数组
+			STRU * s = (STRU *)new char[sizeof(STRU) + sizeof(bb)+1];
+			memcpy(s->b,bb,sizeof(bb)+1);
+		
+			printf("s.a地址 = %p\n",&(s->a));
+			printf("s.b自身地址 = %p\n",&(s->b));
+			printf("s.b指向的地址 = %p\n",s->b);
+			printf("s->b = %s\n",s->b);
+		
+			//=======================================================================
+		
+			//指针分配作为对照
+			STRU2 *s2 = (STRU2 *)new char[sizeof(STRU2)];
+			s2->b = new char[sizeof(bb)+1];
+			memcpy(s2->b,bb,sizeof(bb)+1);
+		
+			printf("s2.a地址 = %p\n",&(s2->a));
+			printf("s2.b自身地址 = %p\n",&(s2->b));
+			printf("s2.b指向的地址 = %p\n",s2->b);
+			printf("s2->b = %s\n",s2->b);	
+			
+			return 0;
+		}
+	
+		/* 执行结果:
+			STRU 结构体大小 4
+			STRU2结构体大小 16
+			s.a地址 = 0x5585133e02c0
+			s.b自身地址 = 0x5585133e02c4    #使用柔性数组 指针指向的地址和指针本身的地址是一致的
+			s.b指向的地址 = 0x5585133e02c4
+			s->b = 01234456789
+			s2.a地址 = 0x5585133e02e0
+			s2.b自身地址 = 0x5585133e02e8   #使用指针 则不是
+			s2.b指向的地址 = 0x5585133e0300
+			s2->b = 01234456789
+		*/
+</xmp>
+
+<p>观察上面的执行结果,会发现,使用柔性数组,不仅减少了销毁次数,而且结构体原本的体积也变小了,这都优于上面使用指针存储不定长数据的方式。</p>
+
+</body>
+</html>
+
+
+
+

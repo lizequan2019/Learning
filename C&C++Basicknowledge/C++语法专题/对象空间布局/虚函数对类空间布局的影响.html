@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>虚函数对类空间布局的影响</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>验证类中存在虚函数对类空间布局的影响,运行环境 debug vc2019 32位</p>
+
+<a href="https://blog.csdn.net/t567g123/article/details/125673983">【网络链接】 C++多态虚函数表内存布局</a>
+
+<p>从执行结果可知,只要类中存在虚函数或者纯虚接口,类的空间中就会存在一个虚函数表(<b>vftable</b>)以及虚函数指针(<b>vfptr</b>)。32位操作系统的虚函数指针是4字节,64位则是8字节。虚函数表目前看不占用类对象的空间。</p>
+
+<p>虚函数指针指向虚函数表。虚函数表中存放着虚函数指针。</p>
+
+<xmp>
+        #include <iostream>
+        using namespace std;
+        #pragma pack(4)
+        
+        
+        class A0 {
+        
+        };
+        
+        
+        
+        class A1 {
+            virtual void fun() = 0;
+        };
+        
+        
+        
+        
+        class A2 {
+            virtual void fun() {};
+        };
+        
+        
+        
+        class A3 {
+            virtual void fun() = 0;
+            virtual void fun1() = 0;
+            virtual void fun2() {};
+            virtual void fun3() {};
+        };
+        
+        
+        
+        
+        class A4 : public A1{
+            virtual void fun() {};
+            virtual void fun1() {};
+        };
+        
+        
+        
+        
+        class A11 {
+            virtual void fun() {};
+        };
+        
+        class A21 : public A11{
+            virtual void fun() {};
+        };
+        
+        class A41 : public A21 {
+            virtual void fun() {};
+            virtual void fun1() {};
+        };
+        
+        
+        
+        
+        
+        class A12 {
+            virtual void fun1() {};
+            virtual void fun3() {};
+        };
+        
+        class A22 {
+            virtual void fun2() {};
+            virtual void fun3() {};
+        };
+        
+        class A42 : public A12, public A22 {
+            virtual void fun1() {};
+            virtual void fun2() {};
+            virtual void fun3() {};
+        };
+        
+        
+        int main() {
+            cout << "空类                     size A0 = " << sizeof(A0) << endl;
+            cout << "仅有纯虚函数的类         size A1 = " << sizeof(A1) << endl;
+            cout << "仅有虚函数的类           size A2 = " << sizeof(A2) << endl;
+
+            //没有继承关系拥有多个虚函数,也只有一个虚函数指针和虚函数表
+            cout << "多个虚函数和纯虚函数的类 size A3 = " << sizeof(A3) << endl;
+
+            //单继承和多继承,也只有一个虚函数指针和虚函数表(来自最上面的父类)
+            cout << "具有单继承关系的类       size A4 = " << sizeof(A4) << endl;
+            cout << "具有多继承关系的类       size A41 = " << sizeof(A41) << endl;
+
+            //多重继承,会有多个父类的虚函数指针和虚函数表
+            cout << "具有多重继承关系的类     size A42 = " << sizeof(A42) << endl;
+            return 0;
+        }
+        
+        /*
+        
+        执行结果
+        空类                     size A0 = 1
+        仅有纯虚函数的类         size A1 = 4
+        仅有虚函数的类           size A2 = 4
+        多个虚函数和纯虚函数的类 size A3 = 4
+        具有单继承关系的类       size A4 = 4
+        具有多继承关系的类       size A41 = 4
+        具有多重继承关系的类     size A42 = 8
+        
+
+
+
+        类空间布局分析
+        =====================================
+        class A0        size(1):
+                +---
+                +---
+        
+        
+        
+        =====================================
+        class A1        size(4):
+                +---
+         0      | {vfptr}   <==============================虚函数指针
+                +---
+        
+        A1::$vftable@:      <==============================虚函数表
+                | &A1_meta
+                |  0
+         0      | &A1::fun
+        
+        A1::fun this adjustor: 0
+        
+        
+        
+        
+        =====================================
+        class A2        size(4):
+                +---
+         0      | {vfptr}
+                +---
+        
+        A2::$vftable@:
+                | &A2_meta
+                |  0
+         0      | &A2::fun
+        
+        A2::fun this adjustor: 0
+        
+        
+        
+        
+         ====================================
+         class A3        size(4):
+                +---
+         0      | {vfptr}
+                +---
+        
+        A3::$vftable@:
+                | &A3_meta
+                |  0
+         0      | &A3::fun  <===========================虚函数表中存放多个虚函数,记录了虚函数的偏移量
+         1      | &A3::fun1
+         2      | &A3::fun2
+         3      | &A3::fun3
+        
+        A3::fun this adjustor: 0
+        A3::fun1 this adjustor: 0
+        A3::fun2 this adjustor: 0
+        A3::fun3 this adjustor: 0
+        
+        
+        
+        
+        
+        =====================================
+        class A4        size(4):
+                +---
+         0      | +--- (base class A1)  <======================基于A1类的虚函数指针 
+         0      | | {vfptr}
+                | +---
+                +---
+        
+        A4::$vftable@:
+                | &A4_meta
+                |  0
+         0      | &A4::fun    <========================这里fun函数是A4类的 
+         1      | &A4::fun1
+        
+        A4::fun this adjustor: 0
+        A4::fun1 this adjustor: 0
+        
+        
+        
+        
+        
+        =====================================
+        class A41       size(4):
+                +---
+         0      | +--- (base class A21)
+         0      | | +--- (base class A11)
+         0      | | | {vfptr}             <=======================基于A11的虚函数指针
+                | | +---
+                | +---
+                +---
+        
+        A41::$vftable@:
+                | &A41_meta
+                |  0
+         0      | &A41::fun
+         1      | &A41::fun1
+        
+        A41::fun this adjustor: 0
+        A41::fun1 this adjustor: 0
+        
+        
+        
+        =============================================
+        class A42       size(8):
+                +---
+         0      | +--- (base class A12)  <===================A12和A22各有一个虚函数指针
+         0      | | {vfptr}
+                | +---
+         4      | +--- (base class A22)
+         4      | | {vfptr}
+                | +---
+                +---
+        
+        A42::$vftable@A12@:
+                | &A42_meta
+                |  0
+         0      | &A42::fun1
+         1      | &A42::fun3   <====================A12和A22都有fun3函数,但是A42先继承的A12,所以fun3函数指针放在A12虚函数表中
+        
+        A42::$vftable@A22@:
+                | -4
+         0      | &A42::fun2
+         1      | &thunk: this-=4; goto A42::fun3  <=========这里用到了【TODO thunk技术】 
+                                                             
+        
+        A42::fun1 this adjustor: 0
+        A42::fun2 this adjustor: 4   <=========这里用到了【TODO thunk技术】 
+        A42::fun3 this adjustor: 0
+        
+        */
+</xmp>
+
+ 
+</body>
+</html>

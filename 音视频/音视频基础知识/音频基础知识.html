@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>音频基础知识</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+    <a href="https://blog.csdn.net/qq_42956179/article/details/120743417?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522170700867016777224462137%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=170700867016777224462137&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-120743417-null-null.142^v99^pc_search_result_base9&utm_term=PCM%E6%A0%BC%E5%BC%8F&spm=1018.2226.3001.4187">【网络链接】PCM音频数据格式介绍</a>
+
+
+    <a href="https://blog.csdn.net/qq_52265298/article/details/134663569?spm=1001.2101.3001.6650.2&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-2-134663569-blog-120743417.235%5Ev43%5Epc_blog_bottom_relevance_base4&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EYuanLiJiHua%7EPosition-2-134663569-blog-120743417.235%5Ev43%5Epc_blog_bottom_relevance_base4&utm_relevant_index=5">【网络链接】什么是PCM数据格式?</a>
+
+
+    
+
+    <p>PCM(脉冲编码调制)的主要参数包括采样频率、量化位数、声道数、样本符号位、字节序、样本数据类型(浮点还是整型)。</p>
+    <p>采样频率 : 指每秒钟采样的样本数,常用的采样频率有8kHz、44.1kHz和48kHz</p>
+    <p>量化位数 : 每个样本的位数,通常为8位、16位、24位等。位数越高,动态范围越大,音频质量越好。</p>
+    <p>声道数   : 音频是单声道还是立体声,常见的声道数有单声道、双声道和5.1环绕立体声等。</p>
+    <p>样本符号位 : 样本数据有无符号,通常情况下都是有符号的。</p>
+    <p>字节序 : 表示音频数据的存储字节序,大端序或小端序。</p>
+
+
+    <p>PCM采集步骤如下,模拟信号->采样->量化->编码->数字信号</p>
+
+    <p>码率、比特率(bps) = 采样率 * 采样位数 * 声道数</p>
+    
+</body>
+</html>

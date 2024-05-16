@@ -1,0 +1,55 @@
+#single
+{
+    min-width: 300px;
+    max-width: 300px;
+    min-height: 300px;
+    max-height: 300px;
+    background-color:greenyellow;
+}
+
+#ason
+{
+    min-width: 300px;
+    max-width: 300px;
+    min-height: 300px;
+    max-height: 300px;
+    background-color:red;
+}
+
+#combination
+{
+    min-width: 200px;
+    max-width: 200px;
+    min-height: 200px;
+    max-height: 200px; 
+    /* background-color:blueviolet; */
+    border-image: url(":/pic/PIC/Dashboard.svg");
+}
+
+#combination_btn
+{
+    min-width: 50px;
+    max-width: 50px;
+    min-height: 20px;
+    max-height: 20px;
+    background-color: aquamarine; 
+}
+
+#btn_c
+{
+    min-width: 200px;
+    max-width: 200px;
+    min-height: 200px;
+    max-height: 200px;
+    background-color: blue;
+    /* border-image: url(":/pic/PIC/map.svg"); */
+}
+
+#btn_c:hover
+{
+    min-width: 200px;
+    max-width: 200px;
+    min-height: 200px;
+    max-height: 200px;
+    background-color: rosybrown;
+}

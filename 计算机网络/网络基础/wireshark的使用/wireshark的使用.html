@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>wireshark的使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+
+<h1>过滤器设置</h1>
+
+<h2><p>抓包过滤器</p></h2>
+
+<p><img src="../../../计算机网络/网络基础/wireshark的使用/抓包过滤器.PNG"></img></p>
+
+<p>wireshark抓包过滤器语法如下。</p>
+<xmp>
+        Wireshark捕获过滤器的语法格式为 
+        
+                <Protocol> <Direction> <Host(s)> <Value> <Logical Operation> <Other expression>。各部分说明如下:
+
+
+                        Protocol(协议) : 该选项用来指定协议,如ether、fddi、ip、arp、rarp、decnet、lat、sca、moprc、mopdl、tcp、udp等。
+
+                        Direction(方向): 该选项用来指定来源或目的地,可使用的值有src、dst、src and dst以及src or dst。
+
+                        Host(s): 指定主机地址,可用的关键字包括net(网段)、port、host、portrange等。
+
+                        Other expression(其他表达式): 使用其他表达式捕获过滤器。
+
+
+
+            
+                下面存一些用到的例子:
+
+
+                        (1) tcp dst port 9999 ||  tcp src port 9999
+               
+
+</xmp>
+
+
+<p><font color="ff0000">注意,抓包过滤器会直接丢弃不符合语法的数据包,丢弃了后面就看不到了</font></p>
+
+<br>
+<br>
+
+<h2><p>显示过滤器</p></h2>   
+    
+<p><img src="../../../计算机网络/网络基础/wireshark的使用/显示过滤器.PNG"></img></p>
+
+<p>对已经捕获到的数据包进行二次过滤,语法太多了,写几个常用的。</p>
+
+<xmp>
+        ip.addr == xxx.xxx.xxx.xxx 
+        ip.dst == 
+        ip.src ==
+        tcp.port ==
+        udp.port ==
+        tcp.dstport == 
+        tcp.srcport ==  
+
+    
+</xmp>
+
+<br>
+<br>
+
+<h1>在捕获的数据包中查找字符串</h1>
+
+<p>在wireshark主界面上Ctrl + F,然后如下图操作。</p>
+
+<p><img src="../../../计算机网络/网络基础/wireshark的使用/查找捕获包中的字符串.PNG"></img></p>
+
+ 
+</body>
+</html>
+
+
+  
