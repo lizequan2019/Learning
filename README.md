@@ -101,13 +101,13 @@
          []QT
 ```
 
-4. 本年度的学习重点,列举出来,避免精力分散
+4. 本年度的重点学习目标,列举出来,避免精力分散
 ```
-         (1) network  : tcp udp wireshark使用 
-                        libevent(优先级次之)
+         (1) QT       : qt机制学习  qml的使用
+         (2) Linux    : linux底层机制学习 
 
-         (2) QT       : qt机制  qml的使用
-         (3) Linux    : linux开发技能 
+         【下列目标目前停止 : 和工作技能需求偏离较大】
+         (3) network  : tcp udp wireshark使用 libevent(优先级次之) 
          (4) spdlog   : 优先级次之
 ```
 
