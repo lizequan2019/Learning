@@ -1,0 +1,25 @@
+#wgt_one > QPushButton
+{
+  background-color: red;
+}
+
+#wgt_two > QPushButton
+{
+  background-color: green;
+}
+
+
+#wgt_one
+{
+   background-color: rgba(162, 226, 200, 0.067);
+}
+
+#wgt_two
+{
+   background-color: rgba(60, 148, 111, 0.067);
+}
+
+#wgt_three
+{
+   background-color: rgba(3, 80, 48, 0.067);
+}

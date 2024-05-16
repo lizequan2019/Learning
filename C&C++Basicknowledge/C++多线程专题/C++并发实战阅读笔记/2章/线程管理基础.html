@@ -1,0 +1,251 @@
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+</style>
+
+<p>使用C++线程库启动线程,可以归结为构造<b>std::thread</b>对象</p>
+
+<pre>
+
+
+        void do_some_work();
+        std::thread my_thread(do_some_work);
+
+
+</pre>
+
+<p>启动了线程,需要明确是否等待线程结束,或者让子线程独立运行,如果在  std::thread  对象销毁之前还没有做出决定,程序就会终止(std::thread 的析构函数会调用 std::terminate())</p>
+
+<p><b><font color="#ff0000">因此,即便是有异常存在,也需要确保线程能够正确的加入(joined)或分离(detached)</font></b></p>
+
+<p>使用detached()让子线程独立的运行,这时候要<b>避免线程函数还持有函数局部变量的指针或引用</b>,因为有可能出现,主线程函数已经执行完毕,共享数据已经被销毁,那么子线程再使用就会出现未定义行为</p>
+
+<details>
+    <summary> <font color="#ff0000">示例代码</font> </summary>
+        <pre>
+            <xmp>
+            #include <iostream>
+            #include <thread>
+            #include <unistd.h>
+            </xmp>
+            using namespace std;
+        
+            //结构体内容
+            struct func{
+                int& i;<font color="#ff0000">//注意这里是引用变量</font>
+                func(int& i_) : i(i_) {}
+                void operator() (){
+                    for (unsigned j=0 ; j<1000; ++j){
+                        cout << "i = " << i << endl;
+                    }
+                }
+            };
+        
+            void oops(){
+                cout << "===oops int===" << endl;
+        
+                int some_local_state=0;
+                func my_func(some_local_state);
+                std::thread my_thread(my_func);
+                //这里分离子线程
+                <font color="#ff0000">my_thread.detach();</font>
+                //睡眠1ms 让子线程执行1ms
+                usleep(1000); 
+                cout << "===oops out===" << endl;
+            }
+        
+            int main(){
+                oops();
+                return 0;
+            }
+        
+            /*
+                执行结果
+                        ===oops int===
+                        i = 0
+                        i = 0
+                        i = 0
+                        ===oops out===
+                        i = 0
+                        i = 0
+                        i = 22009     在oops函数结束后,i的值变成了未定义
+                        i = 22009
+            */
+        </pre>
+</details>
+
+
+<p>处理这种情况的常规方法:将数据复制到线程中,使用值拷贝传参解决</p>
+
+<code>
+    <pre>
+        struct func
+        {
+            int i;  
+            func(int i_) : i(i_) {} //使用值拷贝
+            void operator() (){
+                for (unsigned j=0 ; j<1000; ++j){
+                    cout << "i = " << i << endl;
+                }
+            }
+        };
+    </pre>
+</code>
+
+
+<p>除了使用上述方法,还可以使用join()函数,只能对一个线程使用一次join();一旦使用过join(),std::thread对象就不能再次加入了,当对其使用joinable()时,将返回false</p>
+
+<p>从上面的讲述中,已经知道了子线程可以进行detach()和join(),如果想要分离一个线程,可以在线程启动后,直接使用detach()进行分离。<b>如果打算等待对应线程,则需要细心挑选调用join()的位置。<font color="#ff0000">当在线程运行之后产生异常,在join()调用之前抛出,就意味着这次调用会被跳过。</font></b></p> 
+
+<p>为了避免join()被跳过,这里有两种方法,第一种是使用<b>try catch</b>捕获异常,然后再进行join(),当然正常的流程也要加上join(),代码如下</p>
+
+<p>下面代码展示了即使出现了崩溃,主线程依旧等待了子线程完成,但是这种方法很容易丢失执行路径,全部覆盖的话代码会很冗余(<b>想象一下每个执行路径都写上join()</b>),所以这种方法只适用于简单的情况</p>
+
+<details>
+    <summary> <font color="#ff0000">示例代码</font> </summary>
+        <pre>
+            <xmp>
+            #include <iostream>
+            #include <thread>
+            #include <unistd.h>
+            </xmp>
+            using namespace std;
+        
+            //结构体内容
+            struct func{
+                int& i;//注意这里是引用变量
+                func(int& i_) : i(i_) {}
+                void operator() (){
+                    for (unsigned j=0 ; j<10; ++j){
+                        cout << "i = " << i << endl;
+                        usleep(1000*100);
+                    }
+                }
+            };
+        
+            void oops(){
+                int some_local_state=0;
+                func my_func(some_local_state);
+                std::thread t(my_func);
+                try{
+                    int * a = new int[99999999999999999]; //制造异常
+                }
+                
+                catch(...){
+                    cout << "捕获异常" << endl;
+                    t.join();
+                    throw;
+                }		
+                t.join();
+            }
+        
+            int main(){
+                oops();
+                return 0;
+            }
+
+            /*
+                i = 捕获异常0
+                
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                i = 0
+                terminate called after throwing an instance of 'std::bad_alloc'
+                what():  std::bad_alloc
+                已放弃
+            */
+        </pre>
+</details>
+
+
+<p>另一种方法就是,<b>资源获取即初始化方式(RAII,Resource Acquisition Is Initialization)</b>,提供一个类,在析构函数中使用join(),<b>RAII的思想,它是C++之父Bjarne Stroustrup提出的设计理念,<font color="#ff0000">其核心是把资源和对象的生命周期绑定</font>,对象创建获取资源,对象销毁释放资源。</b></p> 
+
+<p>在RAII思想指导下,C++把底层的资源管理问题提升到了对象生命周期管理的层次。其实这个理念在平常我也用过,比如使用一个类会在它析构时候检查一遍指针类型的成员变量是否已经被释放。只不过这里的思想是我要用一个int *,为了防止内存泄漏我创建一个int类对象更安全(可能不太对,但大概是这个意思),当int类对象生命周期结束时,会调用析构函数,释放其占用的资源。</p>  
+
+<p>使用RAII方案解决的代码如下:</p>
+
+<details>
+   <summary> <font color="#ff0000">示例代码</font> </summary>
+   <pre>
+    <xmp>
+        #include <iostream>
+        #include <thread>
+        #include <mutex>
+        #include <unistd.h>
+    </xmp>
+        using namespace std;
+    
+        /*任务类*/
+        class background_task{
+            public:
+                void operator()()const{  //重载函数运算符      
+                    printf("线程函数抛出异常\n");
+                    throw;
+                }
+        };
+    
+        //管理线程的类
+        class thread_guard{
+            public:
+                explicit thread_guard(std::thread & _t):m_thread(_t){
+    
+                }
+    
+                ~thread_guard(){
+                    if(m_thread.joinable()){//<font color="#ff0000">在类生命周期结束时 线程对象执行join(),记得进行joinable()判断</font>
+                        printf("将子线程汇入主线程\n");
+                        m_thread.join();
+                    }
+                }
+    
+                //直接对对象进行拷贝或赋值是很危险的,因为这可能会弄丢已汇入的线程
+                thread_guard(thread_guard const&)=delete;
+                thread_guard& operator=(thread_guard const&)=delete;
+    
+            private:
+                std::thread & m_thread;
+        };
+    
+    
+        void f(){
+            background_task f;
+            std::thread my_thread(f);
+            //线程函数抛出异常时,thread_guard对象都会被析构,此时my_thread会执行join(),保证了线程正常退出 
+            //<font color="#ff0000">下面这一句代码要紧跟上面,中间不要有其他操作,否则线程中出现异常会导致无法执行到下面的代码</font>
+            thread_guard a(my_thread); 
+            printf("====================\n");
+        }
+    
+        int main(){
+            f();
+            return 0;
+        }
+    
+        /*
+            ====================
+            将子线程汇入主线程
+            线程函数抛出异常
+            terminate called without an active exception
+            Aborted (core dumped)
+        */
+   </pre>
+</details>
+
+
+<p>最后再介绍一下分离线程,使用detach()会让线程在后台运行,这就意味着主线程不能与之产生直接交互。也就是说,不会等待这个线程结束;C++运行库保证,当线程退出时,相关资源的能够正确回收,后台线程的归属和控制C++运行库都会处理。</p>
+
+<pre>
+
+        std::thread t(do_background_work);
+        t.detach();
+
+
+
+</pre>

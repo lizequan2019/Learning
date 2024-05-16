@@ -1,0 +1,37 @@
+这个程序研究获取ubuntu的键盘input事件,核心的shell语句转到对应目录获取有kbd 一行对应的事件,这里直接在 popen的文件fd 中读取内容,注意不要使用 ll 命令获取文件列表会提示ll:command not found ----》 请使用 ls -l.
+
+```c
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <string>
+#include <iostream>
+
+using namespace std;
+
+int main( void )
+{
+    FILE *stream;
+    FILE *wstream;
+    char buf[20];
+    memset( buf, '\0', sizeof(buf) );//初始化buf,以免后面写如乱码到文件中
+    stream = popen("cd /dev/input/by-id ; ls -l | grep \"kbd\" | cut -d \"/\" -f 2", "r"); //将命令的输出 通过管道读取（“r”参数）到FILE* stream
+    //stream = popen("cd /dev/input/by-id ; ls -l | grep \"kbd\" | head -1 | cut -d \"/\" -f 2", "r");   当使用多个键盘时只选择一个，也就是shell输出最上面的一行
+    //这样监控的键盘设备就会不确定，应该是后插入的设备在上面
+    
+    //wstream = fopen( "test_popen.txt", "w+"); //新建一个可写的文件
+
+    // stream -->  buf  -->  wsteam
+    fread( buf, sizeof(char), sizeof(buf), stream); //将刚刚FILE* stream的数据流读取到buf中
+    //fwrite( buf, 1, sizeof(buf), wstream );//将buf中的数据写到FILE    *wstream对应的流中，也是写到文件中
+
+    string str = buf;
+    cout <<"str = "<<str.data();
+
+    pclose( stream );
+    //fclose( wstream );
+    return 0;
+}
+```

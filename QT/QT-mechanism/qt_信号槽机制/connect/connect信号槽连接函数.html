@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>connect信号槽连接函数</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>connect的几个重载版本</h1>
+<p>记录一下常用重载,并不是记录全部</p>
+
+<h2><p>宏形式</p></h2>
+<xmp>
+			static QMetaObject::Connection connect( const QObject *sender,
+								const char *signal, 
+								const QObject *receiver, 
+								const char *method, 
+								Qt::ConnectionType type = Qt::AutoConnection)
+													
+			* sender    :表示发射信号的对象
+			* signal    :表示发射的信号,该参数必须使用 SIGNAL() 宏
+			* receiver  :表示接收信号的对象
+			* method    :表示与信号相关联的槽函数,这个参数也可以是信号,从而实现信号与信号的关联。该参数若是槽,需使用 SLOT() 宏,若是信号需使用 SIGNAL() 宏。
+			* type      :用于指明信号和槽的关联方式,它决定了信号是立即传送到一个槽还是在稍后时间排队等待传送
+			* 函数返回值 : 如果成功将信号连接到槽,则返回连接的句柄,否则,连接句柄无效,可通过将句柄转换为bool来检查该句柄是否有效。
+
+
+			QObject::connect (&ma, SIGNAL(s(int)), &mb, SLOT(x(int));
+</xmp>
+
+<p>信号的指定必须使用宏SIGNAL(),槽函数必须使用宏SLOT(),这两个宏能把括号中的内容转换为与形参相对应的const char*形式。
+	
+<p>在指定函数时,只能指定函数参数的类型,不能有参数名,也不能指定函数的返回类型。比如SLOT(x(int i)),是错误的,因为指定了参数名i,正确形式为SLOT(x(int))</p>
+
+<hr>
+
+<h2><p>指针形式</p></h2>
+<xmp>
+			static QMetaObject::Connection connect(const QObject *sender,
+							PointerToMemberFunction signal, 
+							const QObject *receiver, 
+							PointerToMemberFunction method, 
+							Qt::ConnectionType type = Qt::AutoConnection) 
+								
+							
+			* 各参数的意义见形式1
+			* 这是Qt5中加入的新函数 
+
+			QObject::connect(&ma, &A::s, &mb, &B::x );
+</xmp>
+
+<hr>
+
+<h2><p>宏形式与指针形式的区别</p></h2>
+
+<p>1. 宏形式的SINGAL和SLOT宏实际是把该宏的参数转换为字符串,当信号和槽相关联时,<b>使用的是字符串进行匹配,</b>因此,信号和槽的参数类型的名字必须在字符串意义上相同,所以信号和槽无法使用兼容类型的参数,也因此也不能使用typedef或namespace的类型,虽然他们的实际类型相同,但由于字符串名字不同,从而无法使用宏形式。</p>
+	
+<p>2. 指针形式的信号和槽函数的参数类型不需完全一致,可以进行隐式转换。还支持typedef和命名空间。</p>
+
+<p>3. 指针形式的槽函数可以不使用slots关键字声明,任意的成员函数都可以是槽函数。宏形式的槽函数必须使用slots修饰。</p>
+	
+<p>4. 宏形式的槽函数不受private的限制,也就是说即使槽是private的,仍可通过信号调用该槽函数,而指针形式则在使用connect时就会发生错误。</p>
+	
+<p>5. 当信号或槽函数有重载的形式时,使用指针形式可能会产生二义性错误,此时可使用函数指针的形式指定信号或槽函数,或者使用宏形式,如下代码所示。</p> 
+	
+<xmp>
+			//使用例子
+			class A:public QObject{
+				Q_OBJECT
+
+				singals: 
+						void s(int i); 
+			};
+
+			class B:public QObject{
+				Q_OBJECT 
+				
+				public slots: 
+						void x(){} 
+						void x(int i){}
+			};
+
+			A ma; B mb;
+
+			//出现二义性错误
+			QObject::connect(&ma, &A::s, &mb, &B::x ); 
+
+			//可使用如下方式解决(对于信号类似)
+			QObject::connect(&ma, &A::s, &mb, static_cast<void (B::*)(int)> (&B::x));
+</xmp>
+
+<hr>
+
+<h1>connect第五参数的解析</h1>
+
+<p>选择不同的属性,槽函数执行时所在的线程也不一样,可能在主线程也可能在子线程</p>
+
+<p>感觉这篇笔记和下面的连接熟悉有些关联,<a href="../../../../计算机网络/日积月累/阻塞-非阻塞-同步-异步模式的组合/阻塞-非阻塞-同步-异步.html">【本地链接】阻塞-非阻塞-同步-异步</a> </p>
+
+<table border="1px">
+   <tr> <td>枚举</td> <td>值</td> <td>说明</td> </tr>
+   <tr> <td>Qt::AutoConnection</td> <td>0</td> <td>自动关联</td> </tr>
+   <tr> <td>Qt::DirectConnection</td> <td>1</td> <td>直接关联,<font color="ff0000">槽函数在发射信号所在的线程中执行</font></td> </tr>
+   <tr> <td>Qt::QueuedConnection</td> <td>2</td> <td>队列关联,信号的发射不会直接调用槽函数,而是将信号放入接收者线程的事件队列中,<font color="ff0000">槽函数运行于信号接收者所依附的线程</font></td> </tr>
+   <tr> <td>Qt::BlockingQueuedConnection</td> <td>3</td> <td>阻塞队列关联。和Qt::QueuedConnection一样,只是信号所在线程会一直阻塞,直到槽函数返回。<font color="ff0000">信号发射和对应槽函数在同一线程中,则不能使用此连接,否则应用程序将会死锁。</font></td> </tr>
+   <tr> <td>Qt::UniqueConnection</td> <td>0x08</td> <td>唯一关联。这是一个标志,可使用按位或与上述任何连接类型组合。当设置Qt::UniqueConnection时,则只有在不重复的情况下才会进行连接,如果已经存在重复连接(即,相同的信号指向同一对象上的完全相同的槽),则连接将失败</td> </tr>
+</table>
+
+<p><img src="../../../../QT/QT-mechanism/qt_信号槽机制/connect/直连.PNG"></img>Qt::DirectConnection</p>
+
+<p><img src="../../../../QT/QT-mechanism/qt_信号槽机制/connect/队列.PNG"></img>Qt::QueuedConnection</p>
+
+<p><img src="../../../../QT/QT-mechanism/qt_信号槽机制/connect/队列阻塞.PNG"></img>Qt::BlockingQueuedConnection</p>
+
+<br>
+
+</body>
+</html>
+
+
+
+

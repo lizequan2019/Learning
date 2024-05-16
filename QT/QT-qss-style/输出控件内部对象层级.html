@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>输出控件内部对象层级</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>复杂控件内部会有很多其他的子控件,这时候需要了解内部的组成。</p>
+ 
+<p>下面这个函数实现,主要的功能是输出对象中每一级的对象以及objectName,【TODO 输出内容和控件的对应还是需要自己去探索一下,目前就是按照经验对应】</p>
+
+<xmp>
+    void  ParsingObjectStructure(const QObject *obj, int spaceCount = 0);   //声明
+
+    void  ParsingObjectStructure(const QObject *obj, int spaceCount)    //实现
+    {
+        qDebug() << QString("%1%2 : %3").arg("", spaceCount,'+').arg(obj->metaObject()->className()).arg(obj->objectName());
+        QObjectList list = obj->children();
+    
+        foreach (QObject * child, list)
+        {
+            ParsingObjectStructure(child, spaceCount + 4);
+        }
+    }
+</xmp>
+
+</body>
+</html>

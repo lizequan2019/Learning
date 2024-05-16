@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>区分数组指针和指针数组</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>一维数组指针(也称行指针),可以理解为指向一维数组空间的指针。</p>
+
+<p>下面是数组指针的两种写法</p>
+
+<xmp>
+    int(*p)[n]; //如果*p不加括号,会变成  int * p[n] 指针数组
+
+    int[n] *p;  //这是另一种写法，感觉更好理解
+</xmp>
+
+<p><b>为什么*p和[n]变换位置就需要加一个括号罩住*p</b>,这是因为运算符优先级的问题，<b>[] = () > *</b>, (*p) 表示 *p 是一个整体表示一个指针。感觉和函数指针一样</p>
+
+
+
+<hr>
+
+
+<p>指针数组(指针类型数组)</p>
+<xmp>
+    int *p[n] ===> int *(p[n])   
+</xmp>
+
+<p>这个可以类比char a[n](char类型数组),int b[n](int类型数组),那么int *p[n]自然就是int指针类型数组</p>
+
+</body>
+</html>

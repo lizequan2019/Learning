@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>tcp通信send消息遇到的问题-SIGPIPE的处理</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>在自己写demo的过程中发现这个问题,现象<b>客户端在发送数据完毕后关闭连接,此时发现服务端程序崩溃</b></p>
+
+<p>使用wireshark抓包,分析最后的状态</p>
+<xmp>
+    //端口57310是客户端    端口9999是服务端
+
+    TCP	68	57310 → 9999 [FIN, ACK] Seq=201 Ack=21 Win=65536 Len=0 TSval=409058450 TSecr=409058450
+    
+    TCP	68	9999 → 57310 [ACK] Seq=21 Ack=202 Win=65536 Len=0 TSval=409058491 TSecr=409058450
+    
+    TCP	88	9999 → 57310 [PSH, ACK] Seq=21 Ack=202 Win=65536 Len=20 TSval=409058648 TSecr=409058450 [TCP segment of a reassembled PDU]
+    
+    //可见最后是客户端向服务端发送了一个RST标志位
+    TCP	56	57310 → 9999 [RST] Seq=202 Win=0 Len=0
+
+
+
+
+</xmp>
+
+<p>在网上查了一下,发现这个问题其实是比较常出现的,大致原理如下。</p>
+<xmp> 
+    write(..) on a socket that has been closed at the other end will cause a SIGPIPE.
+
+    错误被描述为broken pipe,即 管道破裂 ,这种情况一般发生在客户进程不理会(或未及时处理)Socket错误,继续向服务TCP写入更多数据时,内核将向客户进程发送SIGPIPE信号,该信号默认会使进程终止(此时该前台进程未进行core dump)。
+    向一个FIN_WAIT2状态的服务TCP(已ACK响应FIN分节)写入数据不成问题,但是向一个已接收了RST的Socket写入则是一个错误。
+
+
+
+    
+</xmp>
+
+
+
+<h3>解决方法</h3>
+
+<p>处理或忽略SIGPIPE信号</p>
+
+
+</body>
+</html>
+
+
+
+
+

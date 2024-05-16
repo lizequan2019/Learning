@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>ffmpeg的框架</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<xmp>
+      //成品
+      ffmpeg.exe 音视频转码、转换器
+      ffplay.exe 简单的音视频播放器
+      ffserver.exe 流媒体服务器
+      ffprobe.exe 简单的多媒体码流分析器
+
+      //sdk
+      libavcodec 用于各种类型声音/图像编解码
+
+      libavutil  包含多媒体应用常用的简化编码的工具函数
+
+      libavformat 用于各种音视频封装格式的生成和解析,包括获取解码所需信息以生成解码上下文结构和读取音视频帧等功能,包含demuxers和muxer库
+
+      libavfilter 过滤器,意思是被编码到输出文件之前用来修改输入文件内容的一个软件工具
+
+      libavdevice 读取电脑的多媒体设备的数据,或者输出数据到指定的多媒体设备上
+
+      libswscale  用于视频场景比例缩放、色彩映射转换
+
+      libswresample 主要功能包括高度优化的音视频重采样
+
+</xmp>
+
+<h1>ffmpeg中重要结构体的分析</h1>
+
+<img src="../../../音视频/ffmpeg使用/ffmpeg的框架/重要结构体.png"></img>
+
+<br>
+<br>
+
+<p>AVFormatContext主要存储音视频封装格式中包含的信息。</p>
+
+<p>【解协议】AVIOContext、URLContext、URLProtocol主要存储音视频使用的协议类型(比如http、file、rtsp...)以及状态。每种协议都对应一个URLProtocol结构体。</p>
+
+<p>【解封装】AVInputFormat存储输入音视频使用的封装格式(比如flv、avi、mp4)。每种音视频封装格式都对应一个AVInputFormat结构。</p>
+
+<p>【解码】AVStream存储一个视频/音频流的相关数据,每个AVStream对应一个AVCodecContext,存储该视频/音频流使用解码方式的相关数据,每个AVCodecContext中对应一个AVCodec,包含该视频/音频对应的解码器。每种解码器都对应一个AVCodec结构。</p>
+
+<p>【存数据】视频的话,每个结构一般是存一帧,音频可能有好几帧。AVPacket存放解码前数据,AVFrame存储解码后数据</p>
+
+
+<br>
+<br>
+
+
+
+ 
+</body>
+</html>

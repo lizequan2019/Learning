@@ -1,0 +1,28 @@
+CLS_MyWgt QPushButton
+{
+    color:red;
+    background-color: green;
+}
+
+CLS_MyWgt #wgt
+{
+    min-width: 300px;
+    max-width: 300px;
+    min-height: 100px;
+    max-height: 100px;
+
+    background-color: aqua;
+}
+
+/*自定义控件类本身的样式*/
+CLS_MyWgt
+{
+    min-width: 300px;
+    max-width: 300px;
+    min-height: 120px;
+    max-height: 120px;
+    background-color: yellow;
+    border-color: black;
+    border-width: 1px;
+    border-style: solid;
+}

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>老杜数据库创建语句</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h1>数据的创建</h1>
+
+<xmp>
+
+    -- 1、部门表
+    CREATE TABLE DEPT ( 
+    DEPTNO INT ( 2 ) NOT NULL, 
+    DNAME VARCHAR ( 14 ), 
+    LOC VARCHAR ( 13 ), 
+    PRIMARY KEY ( DEPTNO )
+    );
+
+
+
+    -- 2、员工表
+    CREATE TABLE EMP (
+    EMPNO INT ( 4 ) NOT NULL,
+    ENAME VARCHAR ( 10 ),
+    JOB VARCHAR ( 9 ),
+    MGR INT ( 4 ),
+    HIREDATE DATE DEFAULT NULL,
+    SAL DOUBLE ( 7, 2 ),
+    COMM DOUBLE ( 7, 2 ),
+    PRIMARY KEY ( EMPNO ),
+    DEPTNO INT ( 2 ) 
+    );
+
+
+
+
+    -- 3、薪水等级表
+    CREATE TABLE SALGRADE ( 
+    GRADE INT, 
+    LOSAL INT, 
+    HISAL INT 
+    );
+
+
+
+    -- 1、插入部门表数据
+    INSERT INTO DEPT ( DEPTNO, DNAME, LOC ) VALUES ( 10, 'ACCOUNTING', 'NEW YORK'); 
+    INSERT INTO DEPT ( DEPTNO, DNAME, LOC ) VALUES ( 20, 'RESEARCH', 'DALLAS'); 
+    INSERT INTO DEPT ( DEPTNO, DNAME, LOC ) VALUES ( 30, 'SALES', 'CHICAGO'); 
+    INSERT INTO DEPT ( DEPTNO, DNAME, LOC ) VALUES ( 40, 'OPERATIONS', 'BOSTON'); 
+    commit;
+
+
+
+    -- 2、插入员工表数据
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7369, 'SMITH', 'CLERK', 7902,  '1980-12-17', 800, NULL, 20); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7499, 'ALLEN', 'SALESMAN', 7698,  '1981-02-20', 1600, 300, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7521, 'WARD', 'SALESMAN', 7698,  '1981-02-22'
+    , 1250, 500, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7566, 'JONES', 'MANAGER', 7839,  '1981-04-02'
+    , 2975, NULL, 20); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7654, 'MARTIN', 'SALESMAN', 7698,  '1981-09-28'
+    , 1250, 1400, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7698, 'BLAKE', 'MANAGER', 7839,  '1981-05-01'
+    , 2850, NULL, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7782, 'CLARK', 'MANAGER', 7839,  '1981-06-09'
+    , 2450, NULL, 10); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7788, 'SCOTT', 'ANALYST', 7566,  '1987-04-19'
+    , 3000, NULL, 20); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7839, 'KING', 'PRESIDENT', NULL,  '1981-11-17'
+    , 5000, NULL, 10); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7844, 'TURNER', 'SALESMAN', 7698,  '1981-09-08'
+    , 1500, 0, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7876, 'ADAMS', 'CLERK', 7788,  '1987-05-23'
+    , 1100, NULL, 20); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7900, 'JAMES', 'CLERK', 7698,  '1981-12-03'
+    , 950, NULL, 30); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7902, 'FORD', 'ANALYST', 7566,  '1981-12-03'
+    , 3000, NULL, 20); 
+    INSERT INTO EMP ( EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM,DEPTNO ) VALUES ( 7934, 'MILLER', 'CLERK', 7782,  '1982-01-23'
+    , 1300, NULL, 10); 
+    commit;
+
+
+
+
+    -- 3、插入薪水等级表数据
+    INSERT INTO SALGRADE ( GRADE, LOSAL, HISAL ) VALUES ( 1, 700, 1200); 
+    INSERT INTO SALGRADE ( GRADE, LOSAL, HISAL ) VALUES ( 2, 1201, 1400); 
+    INSERT INTO SALGRADE ( GRADE, LOSAL, HISAL ) VALUES ( 3, 1401, 2000); 
+    INSERT INTO SALGRADE ( GRADE, LOSAL, HISAL ) VALUES ( 4, 2001, 3000); 
+    INSERT INTO SALGRADE ( GRADE, LOSAL, HISAL ) VALUES ( 5, 3001, 9999); 
+    commit;
+
+</xmp>
+ 
+ 
+<h1>练习题</h1>
+
+<xmp>
+    1、取得每个部门最高薪水的人员名称
+
+    2、哪些人的薪水在部门的平均薪水之上
+
+    3、取得部门中(所有人的)平均的薪水等级 
+
+    4、不准用组函数MAX,取得最高薪水 (给出两种解决办法)
+
+    5、取得平均薪水最高的部门的部门编号(至少给出两种解决方法)
+
+    6、取得平均薪水最高的部门的部门名称
+
+    7、求平均薪水的等级最低的部门的部门名称
+
+    8、取得比普通员工(员工代码没有在mgr字段上出现的)的最高薪水还要高的领导人姓名
+
+    9、取得薪水最高的前五名员工
+
+    10、取得薪水最高的第六到第十名员工
+
+    11、取得最后入职的五名员工
+
+    12、取得每个薪水的等级有多少个员工
+
+    13、略
+
+    14、列出所有员工及领导的名称
+
+    15、列出受雇日期早于其直接上级的所有员工的编号、姓名、部门名称
+
+    16、列出部门名称和这些部门的员工信息,同时列出那些没有员工的部门
+
+    17、列出最少有5个员工的所有部门
+
+    18、列出薪水比SMITH多的所有员工信息
+
+    19、列出所有CLERK 的姓名及其部门名称,以及所在部门的人数
+
+    20、列出最低薪水大于1500的各种工作以及从事此工作的全部雇员人数
+
+    21、列出在部门"SALES"工作的员工的姓名,假定不知道"SALES"部门的编号
+
+    22、列出薪水高于公司平均薪水的所有员工,所在部门,上级领导,雇员的工资等级
+
+    23、列出与"SCOTT"从事相同工作的所有员工及部门名称
+
+    24、列出薪水等于部门30中员工的薪水的其他员工的姓名和薪水
+
+    25、列出薪水高于在部门30工作的所有员工的薪水  的员工姓名和薪水以及部门名称
+
+    26、列出在每个部门工作的员工数量,平均工资和平均服务期限
+    
+    27、列出所有员工的姓名、部门名称和工资
+
+    28、列出所有部门的详细信息和人数
+
+    29、列出各种工作的最低工资以及从事此工作的员工姓名
+
+    30、列出各个部门MANAGER(领导)的最低薪水
+
+    31、列出所有员工的年薪,按年薪从低到高排序
+
+    32、求出员工领导的薪水超过3000的员工名称与领导
+
+    33、求出部门名称中,带'S'字符的部门员工的工资合计,部门人数
+
+    34、给任职日期超过30年的员工加薪水10%
+
+</xmp>
+
+
+
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+<xmp>
+    答案:
+
+
+
+
+
+    1、 
+        SELECT
+            emp.ENAME,
+            emp.DEPTNO,
+            emp.SAL 
+        FROM
+            emp
+            JOIN ( SELECT MAX( SAL ) AS maxsal, DEPTNO FROM emp GROUP BY DEPTNO ) AS b ON emp.DEPTNO = b.DEPTNO 
+            AND emp.SAL = b.maxsal;
+
+
+
+
+
+    2、  
+    
+        SELECT
+            emp.ENAME,
+            emp.sal,
+            avg_sal 
+        FROM
+            emp
+            JOIN (SELECT AVG( SAL ) AS avg_sal, DEPTNO FROM emp GROUP BY DEPTNO) AS t ON emp.DEPTNO = t.DEPTNO 
+            AND emp.SAL > t.avg_sal;
+
+
+    3、
+
+        SELECT
+            emp.DEPTNO,
+            avg( salgrade.GRADE ) 
+        FROM
+            emp
+            JOIN salgrade ON emp.SAL >= salgrade.LOSAL 
+            AND emp.SAL <= salgrade.HISAL 
+        GROUP BY
+            emp.DEPTNO;
+
+
+
+
+
+</xmp>
+ 
+</body>
+</html>

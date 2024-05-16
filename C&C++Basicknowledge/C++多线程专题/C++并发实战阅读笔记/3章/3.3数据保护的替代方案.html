@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>C++多线程-第三章-3.3-数据保护的替代方案</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h2>3.3 保护共享数据的替代方法</h2>
+
+<p>互斥并非保护共享数据的唯一方式。实际中有一种常见情况,共享数据仅需在初始化过程中受到保护。C++标准提供了一套机制,仅为了在初始化过程中保护共享数据。</p>
+
+<h3>3.3.1 保护共享数据的初始化过程</h3>
+
+<p>这里直接举出了单例模式,实际代码可以参考<a href="../../../C++单例模式专题/线程安全的单例模式探究/线程安全的单例模式.html">单例探究</a>,其余不再赘述。</p>
+
+<h3>3.3.2 保护很少更新的数据结构</h3>
+
+<p>大多数时候,数据结构都处于只读状态,因此可被多个线程并发访问,但它们偶尔也会被更新,此节介绍专门处理这种场景的保护机制。</p>
+
+<p>这一节主要讲的就是<b>读写锁</b>,为什么会有这种锁,前面讲的那么多锁还不够用吗？其实也能用,但是我们这节的使用情景就是线程读取数据的次数比写数据多的情况,这时候读写锁的效率比普通锁要高。仔细的想想,其实多个线程读取数据是不会有问题的,锁不应该处理读取数据操作,锁只需处理写数据操作,因此衍生出了读锁和写锁。下面列出读写锁的特性。</p>
+
+<table border="1px">
+      <tr> <td>当前锁状态</td> <td>线程获取读锁</td> <td>线程获取写锁</td></tr>
+      <tr> <td>无锁状态</td> <td>可以</td> <td>可以</td></tr>
+      <tr> <td>读锁状态</td> <td>可以</td> <td><font color=#ff0000>不可以</font></td></tr>
+      <tr> <td>写锁状态</td> <td><font color=#ff0000>不可以</font></td> <td><font color=#ff0000>不可以</font></td></tr>
+      </table>
+
+<h4>读写锁的类型</h4>
+
+<p><b>读优先</b>的设计可以提供很高的并发性,但是,在竞争激烈的情况可能导致写饥饿(写操作线程无法获取锁而被阻塞)。这是因为,如果有大量的读,这种设计会导致只有所有的读都释放了锁之后,写才可能获取到锁。<b>写优先</b>的设计意味着,如果已经有一个  writer  在等待请求锁的话,它会阻止新来reader获取锁,所以优先保证  writer  。当然,如果有一些  reader  已经请求了锁的话,新请求的  writer  也会等待已经存在的  reader  都释放锁之后才能获取。写优先级设计中的优先权是针对新来的请求而言的。这种设计主要避免了  writer  的饥饿问题。</p>
+
+<details>
+<summary> <font color="#ff0000">读写锁示例代码</font> </summary>
+
+<pre>
+      /*
+            这是一个自行实现的读写锁例子,是一个写优先的模式,当有写任务和读任务一起等待时,程序会将互斥量优先分配给写任务(为了避免写饥饿)
+            细节的原理,我会在代码旁加上
+
+            测试代码: 8个读数据线程  2个写数据线程 考虑到电脑的性能就先这样吧
+                  每个读线程50ms读一次  每个写线程1秒写一次
+                  共享数据是一个拥有100个元素的数组
+      */
+      <xmp>
+      #include <iostream>
+      #include <mutex>
+      #include <thread>
+      #include <unistd.h>
+      #include <condition_variable>
+      #include <vector>
+      </xmp>
+      using namespace std;
+
+      class readwrite_lock{
+            private:
+            mutex mtx; // 这个互斥量并不是用于读写操作加锁,而是用于互斥 rcond、wcond、rnum和wnum 的
+
+            condition_variable rcond;//条件变量 用于唤醒读操作
+            condition_variable wcond;//用于唤醒写操作
+
+            int rnum;  // 剩余读操作的数量和  
+            int wnum;  // 剩余写操作的数量和  写锁的数量最大只能是1,
+
+            public:
+            readwrite_lock() {//构造函数
+                  rnum = 0;
+                  wnum = 0;
+            }
+
+            //读锁加锁需要判断 是否有写锁加锁状态,不需要判断其他读锁是否加锁
+            void readLock(){
+                  std::unique_lock<std::mutex> lck(mtx);  //使用独占锁加锁
+                  while(1){
+                        if(wnum != 0){//如果有正在进行的写操作时读操作需要等待,读操作之间不会互斥
+                        cout << "读操作开始等待=================rnum = " << rnum << "   wnum = " << wnum << endl;
+                        rcond.wait(lck); 
+                        }
+
+                        break; //如果没有正在进行的写操作,那么跳出while循环,完成一次读加锁操作    
+                  }
+                  ++rnum; //增加读操作数量
+            }
+
+            //读锁解锁需要注意在后续没有读操作时需要唤醒写操作
+            void readUnlock(){
+                  std::unique_lock<std::mutex> lck(mtx);
+                  if(rnum <= 0){//这个是为了防止错误,其实代码逻辑正常的话,这里是不会进入的
+                        cout << "读锁解锁错误!!! rnum = " << rnum << endl;
+                        return;
+                  }
+                  --rnum;
+
+                  if(rnum == 0) {//只有需要进行的读操作数量为0才可以唤醒其他写操作
+                        wcond.notify_one();    //其实写操作最多只有一个
+                        //rcond.notify_all();  //读操作不需要唤醒读操作(因为读操作不会阻塞其他读操作)
+                  }
+            }
+
+            //写锁加锁需要判断是否有写锁or读锁加锁
+            void writeLock(){
+                  std::unique_lock<std::mutex> lck(mtx);
+                  while(1){
+                        //这是当时的一个错误思路留在这里  2022-8-29
+                        //  if(wnum != 0)
+                        //  {//当正在进行的写操作数量或读操作数量不为0时 需要等待
+
+                        //     cout << "写操作开始等待=================rnum = " << rnum << "   wnum = " << wnum << endl;
+                        //     wcond.wait(lck);
+                        //  }
+                        //  cout << "写操作数量加1" << endl;
+                        //  ++wnum;
+                        //  return;   
+
+                        if(wnum != 0){//当正在进行的写操作数量不为0时 需要等待
+
+                        cout << "写操作开始等待=================rnum = " << rnum << "   wnum = " << wnum<< endl;
+                        wcond.wait(lck);
+                        }
+
+                        if(wnum == 0){
+                        //这里要判断的原因是 写锁的数量最大只能是1 被条件变量唤醒后执行到这里不能直接++wnum,
+                        //如果已经wnum != 0 说明有正在进行的写操作,那么就可以直接跳过去,等待其他写操作完成
+                        //这里还有一个重要作用,起到了写操作优先于读操作的作用,当没有正在执行的写操作时(wnum == 0),
+                        //代码会执行到这里wnum数量等于1,那么此后的readLock函数都必须等待写操作完成才可以继续加锁
+                        ++wnum;
+                        }
+                        
+                        if(rnum == 0){//当有正在进行的读操作时(rnum != 0)需要等待 如果读操作数量为0那么跳出while循环进行一次写加锁
+                        break;
+                        }    
+                  } 
+            }
+
+            //写锁解锁时,需要唤醒所有操作 
+            void writeUnlock(){
+                  std::unique_lock<std::mutex> lck(mtx);
+                  if(wnum <= 0){
+                        cout << "写锁解锁错误!!!  wnum = " << wnum << endl;
+                        return;
+                  }
+
+                  --wnum;
+
+                  //当前的写操作结束后就唤醒其他等待的操作
+                  wcond.notify_one();
+                  rcond.notify_all(); 
+            }
+      };
+
+
+      readwrite_lock lk;
+
+      #define max_read  100         //共享数组最大元素个数
+      #define sleep_read  50*1000   //读操作间隔时间 50ms
+      #define sleep_write 1000*1000 //写操作间隔时间 1s
+
+
+      //读线程函数
+      void read_fun(vector<int> & vec){
+            while(1){
+            usleep(sleep_read);
+            lk.readLock();
+            cout << "[READ] [" << std::hex << this_thread::get_id() << "]" << std::dec;
+            for(int i = 0; i < max_read; ++i){
+                  cout << vec[i] << " ";
+            }
+            cout << endl;
+            lk.readUnlock();
+            }
+      }
+
+
+      //写线程函数 注意入参的类型是引用
+      void write_fun(vector<int> & vec){
+            while(1){
+            usleep(sleep_write);
+            lk.writeLock(); 
+            cout << "[WRITE] [" << std::hex << this_thread::get_id() << "]" << std::dec << endl;
+            for(int i = 0; i < max_read; ++i){
+                  vec[i] = vec[i] + 1;
+                  cout << vec[i] << " ";
+            }
+            cout << endl;
+            lk.writeUnlock();
+            }
+      }
+
+      int main()
+      {
+            //共享数据
+            vector<int> vec;
+            for(int i = 0; i < max_read; ++i){
+            vec.push_back(i);
+            }
+
+
+            //测试线程
+
+            thread th1(read_fun,ref(vec));   
+
+            thread th2(read_fun,ref(vec));   
+
+            thread th3(read_fun,ref(vec));   
+
+            thread th4(read_fun,ref(vec));   
+
+            thread th5(read_fun,ref(vec));   
+
+            thread th6(read_fun,ref(vec));   
+
+            thread th7(read_fun,ref(vec));   
+
+            thread th8(read_fun,ref(vec));   
+
+            thread th9(write_fun,ref(vec));  
+
+            thread th10(write_fun,ref(vec)); 
+
+            th1.join(); 
+            th2.join();
+            th3.join();
+            th4.join();
+            th5.join();
+            th6.join(); 
+            th7.join();
+            th8.join();
+            th9.join();
+            th10.join();
+
+            return 0;
+      }
+</pre>
+</details>
+ 
+</body>
+</html>

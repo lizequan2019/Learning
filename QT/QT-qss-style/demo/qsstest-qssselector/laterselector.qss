@@ -1,0 +1,25 @@
+#wgt_later_one QPushButton
+{
+  background-color: red;
+}
+
+#wgt_later_two QPushButton
+{
+  background-color: green;
+}
+
+
+#wgt_later_one
+{
+   background-color: rgba(162, 226, 200, 0.067);
+}
+
+#wgt_later_two
+{
+   background-color: rgba(60, 148, 111, 0.067);
+}
+
+#wgt_later_three
+{
+   background-color: rgba(3, 80, 48, 0.067);
+}

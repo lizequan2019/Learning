@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>mysql使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>SQL-DB-DBMS的关系</h1>
+<xmp>
+    DB   :  DataBase数据库,一般以文件的形式存在
+    DBMS :  DataBase Management System 数据库管理系统(MySQL Oracle Sqlserver)
+    SQL  :  结构化查询语言,是一套标准
+ 
+    DBMS通过执行Sql语句对DB进行操作
+</xmp>
+<br>
+<br>
+
+
+<h1>MySQL软件的命令</h1>
+<table border="1px">
+    <tr> <td>命令</td> <td>解释</td> <td>注意说明</td></tr>
+
+    <tr> <td>mysql   -uroot -p123456</td> <td>登录数据库</td> <td>配置了环境变量以后才能直接用命令行登陆</td></tr>
+    <tr> <td>exit</td> <td>退出</td> <td></td></tr>
+    <tr> <td>show databases;</td> <td>显示所有数据库</td> <td></td></tr>
+    <tr> <td>use xxxx;</td> <td>选择要使用的数据库</td> <td></td></tr>
+    <tr> <td>select database();</td> <td>显示当前连接的数据库</td> <td></td></tr>
+    <tr> <td>show tables;</td> <td>显示当前数据库中的表</td> <td></td></tr>
+    <tr> <td>show tables from xx;</td> <td>查看别的数据库中的表</td> <td></td></tr>
+    <tr> <td>select version();</td> <td>显示当前的服务器版本</td> <td>这个只是显示5.7.xx 信息,没有显示是32位还是64位的<br>退出mysql,然后使用 mysql -v<br>mysql  Ver 14.14 Distrib 5.7.34, for Win64 (x86_64)</td></tr>
+
+    <tr> <td>select now();</td> <td>显示当前日期时间</td> <td></td></tr>
+    <tr> <td>select user();</td> <td>显示当前用户</td> <td></td></tr>
+    <tr> <td>show create table xxx;</td> <td>查看创建表的语句</td> <td></td></tr>
+    <tr> <td>desc xxx; <br> show columns from xxxx;</td> <td>查看一个表的结构 <br> 它对每个字段返回一行,行中包括字段名、数据类型、是否允许NULL、键信息、默认值以及其他消息</td> <td></td></tr>
+    <tr> <td>net start/stop MySQL57</td> <td>MySQL服务的启动和停止</td> <td>使用管理员权限<br>MySQL57是mysql服务名称,不同版本的mysql服务的名称不同</td></tr>
+ </table>
+ <br>
+ <br>
+ 
+
+ <h1>反引号、单引号、双引号</h1>
+
+ <p>反引号一般在Esc键的下方。它是为了区分MySQL的保留字与普通字符而引入的符号。</p>
+
+ <p>create table desc 报错  <br>  create table `desc` 成功</p>
+
+ <p>一般我们建表时都会将表名，库名都加上反引号来保证语句的执行度。</p>
+
+ <br>
+ <br>
+
+ <p>单引号' 和双引号 ", 在标准SQL中,字符串使用的是单引号。如果字符串本身也包括单引号,则使用转移解决。MySQL对SQL的扩展,允许使用单引号和双引号两种。</p>
+ 
+ 
+<h1>SQL语言种类</h1>
+<xmp>
+    DQL(数据查询语言)Data QueryLanguage             对表中数据进行查询 select 【重要】
+
+    DML(数据操作语言)Data Manipulation Language     对表中的数据进行增删改,对数据操作 insert(向表中插入数据) update(修改表中数据) delete(删除表数据)
+
+    DDL(数据定义语言)data definition language       对表的结构进行增删改,对表操作create(创建表) drop(删除表) alter(修改表结构)
+    
+    TCL(事务控制语言)Transaction Control Language    commit(提交事务) rollback(回滚事务)
+
+    DCL(数据控制语言)Data Control Language           grant(授权)  revoke(撤销权限)
+</xmp>
+<br>
+<br>
+
+
+
+
+<h2>DDL介绍</h2>
+<p>数据表中的数据类型</p>
+<xmp>
+        varchar : 可变长字符串,根据实际的数据长度动态的分配空间,最长255字符
+        char    : 定长字符串 最长255字符
+        int     :
+        bigint  : long
+        float   :
+        double  :
+        date    : 短日期
+        datetime: 长日期
+        clob    : 字符大对象 最多可以存储4G字符串 专门存储文本
+        blob    : 二进制大对象 专门存储图片,声音,视频 
+</xmp>
+
+<table border="1px">
+    <tr> <td>命令</td> <td>解释</td> </tr>
+    <tr> <td>drop table 表1;</td> <td>删除一张表格通用写法</td> </tr>
+    <tr> <td>drop table if exists 表1;</td> <td>还未完成的事,标记以后完成,完成后可以删除该标记</td> </tr>
+    <tr> <td>CREATE TABLE students(<br>id INT NOT NULL AUTO_INCREMENT,<br>name VARCHAR(100) NOT NULL,<br>age INT,<br>grade FLOAT,<br>PRIMARY KEY (id)<br>);<br></td> <td>创建表<br>表名建议以t_ 或者 tbl_ 开头<br>id INT NOT NULL AUTO_INCREMENT : 创建了一个名为id的列,数据类型为整数(INT),它不能包含NULL值(NOT NULL),并且每次插入新行时会自动递增(AUTO_INCREMENT)<br>name VARCHAR(100) NOT NULL : 创建了一个名为name的列,数据类型为可变长度字符串(VARCHAR),最大长度为100个字符,它也不能包含NULL值<br>age INT : 创建了一个名为age的列,数据类型为整数,可以包含NULL值<br>grade FLOAT : 创建了一个名为grade的列,数据类型为浮点数<br>PRIMARY KEY (id) : 指定id列作为表的主键,确保每行的id值都是唯一的。</td> </tr>
+    <tr> <td>create table 表2  as select * from 表1;</td> <td>将表1的查询结果创建为表2</td> </tr>
+ </table>
+ <br>
+<br>
+
+
+<h2>DML介绍</h2>
+<table border="1px">
+    <tr> <td>命令</td> <td>解释</td> </tr>
+
+    <tr> <td>insert into 表名<br>(字段名1,字段名2,字段名3,...) <br>values(值1,值2,值3, ...)</td> <td>向表中插入数据<br>如果对应字段的值没有写,mysql自动将值赋为空</td> </tr>
+    <tr> <td>insert into 表名 <br> values(值1,值2,值3....) </td> <td>向表中插入数据 <br> 前面的字段不写,但是值要与字段一一对应</td> </tr>
+    <tr> <td>insert into 表名 <br> (字段1,字段2,字段3) <br> values (值1,值2,值3), <br> values(值4,值5,值6)</td> <td>插入多行数据</td> </tr>
+    <tr> <td>insert into 表2 select * from 表1;</td> <td>将表1的查询结果插入到表二中 </td> </tr>
+
+    <tr> <td>update 表1 set <br> 字段1 = 'xxx', <br> 字段2 = 'xxx' <br> where 条件;</td> <td>修改表中数据<br>注意不限制条件则所有指出的字段都会修改</td> </tr>
+    <tr> <td>delete from 表1 where 筛选条件;</td> <td>删除表数据<br>注意不加筛选记录那么就会删除整个表格,使用delete删除数据,可以回滚,但是删除速率慢</td></tr>
+
+    <tr> <td>truncate table 表1;</td> <td>删除数据量大的表数据 <br> 一旦删除无法恢复数据,但是删除效率高</td></tr>
+</table>
+<br>
+<br>
+
+
+
+
+<h2>DQL介绍</h2>
+
+<p>这里写一些常用的关键字使用方法,更全面的可以到下面的网站查询</p>
+
+<a href="https://www.w3cschool.cn/sql/">【网络链接】SQL教程</a> <br>
+
+<a href="https://www.w3cschool.cn/mysql/">【网络链接】MYSQL教程</a> <br>
+
+<p>长时间不用,在下面这个网站练练手</p>
+
+<a href="https://sqlbolt.com/lesson/select_queries_with_joins">【网络链接】练习</a> 
+
+<br>
+<br>
+
+<table border="1px">
+
+    <tr> <td>关键字</td> <td>含义</td> <td>用例</td> <td>注意事项</td> </tr>
+
+    <tr> <td><font color=ff00ff>基础操作</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>select x,y,z from a</td>  <td>选择a表中要输出的列x,y,z</td> <td></td> <td>select * from a; 输出a表的所有列</td> </tr>
+
+    <tr> <td>as</td> <td>给语句中的字段起别名</td> <td>select sal as '薪资' from emp;</td>  <td></td> </tr>
+
+
+
+    <tr> <td><font color=ff00ff>条件语句</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>where</td> <td>条件语句</td> <td>select sal from emp where sal = 5000;</td>  <td> <font color=ff000>where中不能直接使用分组函数</font>,因为分组函数在<b>group by</b>后使用,而<b>group by</b>在<b>where</b>后使用</td> </tr>
+
+    <tr> <td>and <br> or</td>  <td>逻辑与 逻辑或 用于条件语句中</td>  <td>select ename,sal from emp where sal > 1000 and sal < 4000; <br> select ename,sal from emp where sal < 1000 or sal > 4000;</td>  <td>and的优先级比or高,如果要先执行or则需要使用括号括起来</td> </tr>
+
+    <tr> <td>between ... and ...</td> <td>选择区间 [a,b]</td> <td>select ename,sal from emp where sal between 1000 and 5500;</td> <td>注意是闭区间</td></tr>
+
+    <tr> <td>= <br>!= 或者 <> </td> <td>等于 不等于逻辑</td> <td>col_name = "abc" <br> col_name != "abc"</td> <td>区分大小写的精确字符串</td></tr>
+
+    <tr> <td>like <br> not like</td> <td>不区分大小写的=和!= </td> <td>col_name LIKE "ABC" <br> col_name NOT LIKE "ABC"<td>不区分大小写的精确字符串</td></tr>
+
+    <tr> <td>% <br> _</td> <td>模糊搜索 <br> %匹配多个字符(未必存在匹配字符) _匹配单个字符(一定存在匹配字符)</td> <td>col_name LIKE "%AT%"  (matches "AT", "ATTIC", "CAT" or even "BATS") <br> col_name LIKE "AN_" (matches "AND", but not "AN")<td>% _ 仅在like not like后使用 <br> 要是匹配 _ % 需要转义 \_  \%</td></tr>
+
+    <tr> <td>in <br> not in</td> <td>字符串列表匹配,in 相当于多个or  not in表示不在范围中</td> <td>col_name IN ("A", "B", "C") <br> col_name NOT IN ("D", "E", "F")</td> <td>in 和 not in 不是区间而是具体的值的集合</td> </tr>
+
+
+
+
+    <tr> <td><font color=ff00ff>过滤和排序</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>distinct</td> <td>去重,丢弃具有重复列值的行</td> <td>select distinct 列名 from xxx</td> <td></td></tr>
+    
+    <tr> <td>order by ... asc(desc)</td> <td>排序 asc升序排序 desc降序排序</td> <td>select ename,sal from emp order by sal desc;</td> <td>默认升序排序<br> order by 后面可以跟多个元素比如 order by xxx asc, yyy desc 越靠前的起主导作用</td></tr>
+
+    <tr> <td>limit </td> <td>限制输出的行数,比如只需要前5行 <br> limit  开始行索引,输出长度</td> <td>SELECT * FROM movies limit 5; <br> SELECT * FROM movies order by title asc limit 5 ;</td> <td>通用的标准分页sql,分页的作用是提高用户可读性<br>每页显示3条记录:<br>第一页:0,3 <br>第二页:3,3 <br>第三页:6,3 <br>第四页:9,3 <br>第n页:m*(n-1),m</td></tr>
+
+    <tr> <td>offset</td>  <td>配合limit使用,表示从第几行开始输出</td> <td>SELECT * FROM movies order by title asc limit 5 offset 5; <br> 这个例子表示从第一行偏移五行开始输出,并且输出五行</td>  <td></td> </tr>
+
+    <tr> <td>is NULL <br> is not NULL</td> <td>判断值是否为NUL</td> <td>SELECT * FROM movies where xx is NULL;</td> <td>数据库中NULL不能用等号判断,需要用is 或者 is not, <font color=ff0000>NULL表示此处没有值</font></td> </tr>
+
+
+
+
+
+
+
+    <tr> <td><font color=ff00ff>分组查询</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>group by xxx</td> <td>对某个字段或某些字段进行分组,一般和分组函数连用</td> <td>select job from emp group by job;<br> select JOB,max(sal) from emp group by JOB;</td>  <td>如果不分组那么默认数据表分组为一个组,所以也算执行了group by <br> <font color=ff0000>在一条select语句当中,如果有group by语句,select后面只能跟参加分组的字段以及分组函数</font></td></tr>
+  
+    <tr> <td>having</td> <td>对分组之后的数据进行再次过滤</td> <td>SELECT customer_id, COUNT(*) as order_count <br> FROM orders <br> GROUP BY customer_id <br>  HAVING order_count > 2;</td> <td></td> </tr>
+
+    <tr> <td>分组函数(多行处理函数)<br> count计数 <br> sum求和 <br> avg平均值 <br> max最大值 <br> min最小值</td> <td>输入多行,输出一行</td> <td>SELECT ENAME,MAX(SAL),DEPTNO from emp GROUP BY DEPTNO ;</td> <td>必须先分组,再使用分组函数</td></tr>
+
+
+    <tr> <td><font color=ff00ff>合并查询结果集</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>union</td> <td>合并查询结果集,使用这种方法可以减少笛卡尔积的影响</td> <td>select xxx from yyy <br> union <br> select zzz from eee</td> <td>mysql要求合并的结果列数要相同,甲骨文要求更严格在列数相同的要求上还要数据类型相同</td> </tr>
+
+
+    
+
+    <tr> <td><font color=ff00ff>执行顺序</font></td> <td></td> <td></td> <td></td> </tr>
+
+    <tr> <td>sql语句的执行顺序</td> <td>select 5 <br> from 1 <br>where 2 <br> group by 3 <br> having 4 <br> order by 6 <br> limit 7 </td> <td></td>  <td>一定要按照执行顺序编写语句否则执行会错误,例如不能在where后面使用分组函数,因为分组函数必须在执行group by后才能使用,而where比group by先执行</td></tr>
+
+ </table>
+
+ <br>
+ <br>
+
+<h3>表的联结查询</h3>
+
+<p>(1) 实际查询都是联合多张表来查询数据,多张表连接查询会产生笛卡尔积现象</p>
+<p>笛卡尔积现象 : 当两张表进行连接查询的时候,没有任何条件进行限制,最终的查询结果条数是两张表记录条数的乘积。有很多排列组合结果是没有意义的</p>
+<p>避免笛卡尔积现象 : 添加适当的条件过滤出需要的排列组合结果。<b>注意这样做在底层没有减少记录匹配的次数,只是做到显示有效数据。</b></p>
+
+<br>
+
+<p>(2) 一些需要了解的定义:</p>
+<p>外键 : 某张表中的一列,它包含另一张的表的主键值,定义了两个表之间的关系</p>
+<p>主键 : 此值能唯一区分表中的每个行</p>
+
+<br>
+
+<p>下面介绍一下表连接方式</p>
+
+<table border="1px">
+    <tr> <td>连接方式</td> <td>细化连接方式</td> <td>代码示例</td> <td>说明</td> </tr>
+    <tr> <td rowspan="4">内连接</td> </tr>
+    <tr>  <td>等值连接</td>  <td>SELECT * FROM movies <br>INNER JOIN <br>boxoffice <br>ON <br>movies.id = boxoffice.movie_id;</td> <td>条件是等量关系</td> </tr>
+    <tr>  <td>非等值连接</td>  <td></td> <td>连接条件中的关系是非等量关系</td> </tr>
+    <tr>  <td>自连接</td>  <td></td> <td>一张表看做两张表,自己连接自己,表中字段与表中字段相关联。</td> </tr>
+    <tr> <td rowspan="3">外连接</td> </tr>
+    <tr>  <td>左外连接(LEFT JOIN)</td>  <td>SELECT building FROM employees <br> LEFT JOIN <br> buildings;</td> <td>以left join左侧的表视为主表,将其所有的数据查询出来,捎带着将left join右侧的副表关联查询出来</td> </tr>
+    <tr>  <td>右外连接(RIGHT JOIN)</td>  <td></td> <td>与左外连接类似</td> </tr>
+    <tr>  <td>>=全连接</td>  <td></td> <td></td> <td>很少用</td> </tr>
+    <tr>  <td>>=3张表以上的连接</td>  <td></td> <td>select xxx <br> from <br> a join b <br> on <br> a和b的连接条件 <br> join  c <br> on <br> 和 c的连接条件</td> <td></td></tr>
+</table>
+
+<br>
+
+<p><b>外连接和内连接的区别</b>使用内连接方式连接的两张表A B,凡是A和B能够匹配上的记录才查询出来, A和B之间没有主副之分,两张表是平等的。<font color=ff0000>使用外连接的话,A和B是是有主副之分的,主要查询主表的数据,捎带着查询副表数据,当副表中没有和主表中的数据匹配上,副表自动模拟出NULL与之匹配。</font></p>
+
+<br>
+<br>
+
+<h3>子查询</h3>
+
+<p>select 语句中嵌套select语句,被嵌套的select语句是子查询</p>
+<p>子查询出现在select、 from 、where 后面,称为where子查询、from子查询、select子查询(了解即可)。</p>
+<p><font color=ff0000>注意: from后面的子查询,可以将子查询的查询结果当做一张临时表</font></p>
+
+<br>
+<br>
+
+
+</body>
+</html>

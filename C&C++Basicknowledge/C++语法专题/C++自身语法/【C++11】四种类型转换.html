@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>【C++11】四种类型转换</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+
+<p>C++四种强制类型转换运算符是在C++11标准引用的,原来的C语言的类型转换规则太过松散</p>
+    
+<p>C++11中的四种强制类型转换运算符分别是</p>
+
+<pre>
+    *  static_cast 
+    *  const_cast
+    *  dynamic_cast
+    *  reinterpret_cast
+</pre>
+
+    
+<p>可以根据转换目的选择合适的转换运算符,而不是使用C语言通用的转换类型,这样可以使编译器能够检查程序的行为是否与设计者想法吻合。它们统一的使用方法,如下:</p>
+    
+<xmp>
+    // type-name 是要转换成的类型
+
+    type-name yyyy  =  (类型转换运算符) <type-name> (expression);
+</xmp>
+
+
+<h1>static_cast</h1>
+    
+<p>static_cast用于<b>明确合法</b>的隐式转换,这种转换只在编译期间进行检查。一般用于以下几种转换。</p>
+    
+<h3>(1) 基础的数据类型转换</h3>
+
+<xmp>
+    #include <iostream>
+    using namespace std;
+
+    int main(){
+
+        cout << "数据转换 这是一种双向的隐式转换,但是要注意数据精度问题,下面long long 转换 int 就会出现精度损失" << endl;
+        
+        cout << "int类型占据的字节数 = " << sizeof(int) << endl;     
+        cout << "long long类型占据的字节数 = " << sizeof(long long) << endl; 
+
+        int test_int;
+        long long test_longlong = 0x111111111; //0x111111111 = 4581298449
+        cout << "test_longlong原本值 = " << test_longlong << endl;
+
+        //C++ 风格转换
+        test_longlong = 0x111111111;
+
+        test_int = static_cast<int>(test_longlong);
+        cout << "C++风格转换 long long -> int test_int = " << test_int << endl;
+
+        test_longlong = static_cast<long long>(test_int);
+        cout << "C++风格转换 int -> long long test_longlong = " << test_longlong << endl;
+
+        return 0;
+    }
+
+    /* 执行结果:
+                int类型占据的字节数 = 4
+                long long类型占据的字节数 = 8
+
+                test_longlong原本值 = 4581298449
+
+                C++风格转换 long long -> int test_int = 286331153
+                C++风格转换 int -> long long test_longlong = 286331153
+        */
+</xmp>
+    
+<h3>(2) void指针和其他类型指针之间的转换</h3>
+    
+<xmp>
+    #include <iostream>
+    using namespace std;
+
+    int main(){
+
+        cout << "void *与其他类型指针转换是一种单向的隐式转换,其他类型指针可以正常转换成void *,但是void * 需要强转成其他类型指针" << endl;
+
+        int test_int = 10;
+        int * test_intp = &test_int;
+        void * test_void = nullptr;
+
+        //C 风格转换
+        test_void = test_intp;        //C风格转换  int* -> void*    正常
+        //test_intp = test_void;      //C风格转换  void * -> int*   错误
+        test_intp = (int *)test_void; //C风格强转  void * -> int*   正常
+        cout << "C风格转换 test_intp值 = " << *test_intp << endl;
+
+        //C++ 风格转换
+        test_intp = &test_int;
+        test_void = static_cast<void *>(test_intp);
+        test_intp = static_cast<int *>(test_void);
+        cout << "C++风格转换 test_intp值 = " << *test_intp << endl;
+
+        return 0;
+    }
+
+    /* 执行结果:
+        C风格转换 test_intp值 = 10
+        C++风格转换 test_intp值 = 10
+    */
+</xmp>
+    
+<h3>(3) 父类与子类转换</h3>
+
+<p>父类与子类转换是一种单向的隐式转换,<b>子类可以转换为父类,父类需要强转为子类,父类转换成子类不安全,因为有些变量和函数是子类独有的。</b>了解即可</p>
+
+<br>
+
+<br>
+
+
+<h3>static_cast不能用于以下情况</h3>
+
+<pre>
+    (1) 不能用于无关类之间的转换
+
+    (2) 不能去掉底层const修饰和volatile修饰
+
+    (3) 不能用于int和指针之间的转换
+</pre>
+    
+<hr>
+
+<h1>dynamic_cast</h1>
+
+<p><b>将基类的指针或引用安全地转换成派生类的指针或引用,并用派生类的指针或引用调用非虚函数。</b>dynamic_cast转换在程序运行期间进行检查。</p> 
+
+<p>把expression转换为type-name类型,type-name必须是类的指针、类的引用或者是void *;<b>注意</b>,如果type-name是指针类型,那么expression也必须是一个指针;如果type-name是一个引用,那么expression也必须是一个引用。</p>
+    
+<p>dynamic_cast转换在运行时进行。<b>对于指针类型,在运行时会检查expression是否真正的指向一个type-name类型的对象,如果是,则能进行正确的转换;否则返回nullptr</b>。对于引用类型,若是无效转换,则在运行时会抛出异常std::bad_cast。</p>
+    
+<hr>    
+
+<h1>const_cast</h1>
+    
+&emsp;&emsp;大部分用于去除const修饰。【使用很少,先不深究了】
+
+<a href="https://www.cnblogs.com/ider/archive/2011/07/22/cpp_cast_operator_part2.html"> C++标准转换运算符const_cast</a>
+
+<hr>
+
+<h1>reinterpret_cast</h1>
+
+<p>reinterpret_cast运算符是用来处理无关类型(我认为是任意类型)之间的转换;它会产生一个新的值,这个值会有与原始参数expressoin有完全相同的比特位(应该是有意味着二进制上是相同的)。</p>
+
+<p>上面说的任意类型也不绝对,还是有几点限制的</p>
+<xmp>
+        1.不能将 指针 转换为 更小的整型 或 更小的浮点型 ,这样做会丢失比特位
+
+        2.不能进行 函数指针 和 数据指针 互转
+
+        3.不允许去除 const限定 (要不const_cast就失业了)
+
+
+</xmp>
+
+<p>IBM的C++指南(我没找到原文)里明确告诉了我们reinterpret_cast可以,或者说应该在什么地方用来作为转换运算符:</p>
+<xmp>
+        1. 从 指针类型 到一个 足够大的整数类型 
+        
+        2. 从 整数类型 或者 枚举类型 到 指针类型 
+            
+        3. 从 函数指针 到另一个 不同类型的函数指针 
+            
+        4. 从 对象指针 到另一个 不同类型的对象指针 
+            
+        5. 从 类函数成员指针 到另一个 不同类型的函数成员指针 
+            
+        6. 从 类数据成员指针 到另一个 不同类型的数据成员指针 
+
+
+</xmp>
+
+</body>
+</html>
+
+
+
+
+
+
+

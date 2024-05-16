@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>使用gogs搭建git服务器</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>背景</h1>
+
+<p>自己的服务器上一直是用gitlab部署作为git服务,但是gitlab对机器的内存要求有点高,4G内存的小服务器开了gitlab就剩下几百兆内存了,别的服务器就受限制了,于是决定更换一个。</p>
+ 
+<p>其实我对仓库管理系统要求没有太高,正常的上传下载浏览就行了。最后决定使用gogs。</p>
+
+
+<h1>踩坑</h1>
+
+<p>我才用二进制包安装,操作步骤直接按照官网上说的来就行。<a href="https://gogs.io/docs/installation/install_from_binary">gogs二进制包</a></p>
+
+<p>1. 需要注意的是,在使用前需要检测环境是否符合gogs的要求。我这边Mysql使用的是8.0版本,git使用的是2.34版本(git最好用2.0以上,用新的,省事)。</p>
+
+<p>2. gogs不能使用root运行,需要创建一个普通用户。</p>
+
+<p>3. Mysql安装后会出现权限报错的问题,莫慌,网上资料很多。需要注意有很多命令mysql5.7和mysql8.0是不一样的。</p>
+
+
+
+
+</body>
+</html>

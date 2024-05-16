@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>QScrollBar样式</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h2>QScrollBar</h2>
+
+<p>是一个滚动区域控件,当内置的界面大于外部窗口的范围时会出现横向和纵向的滚动条,下面介绍一下对滚动条样式的设置。</p>
+
+
+<h2>滚动条</h2>
+
+<p>滚动条的组成部分如下,下面列出经常使用的部分,sub-line包含了up-arrow,而add-line则包含down-arrow区域。并且配置子控件的qss的时候需要在子控件中设置Subcontrol-Origin,在设置父控件中设置margin or padding or content or border</p>
+    
+<xmp>
+            up-arrow 
+            sub-line 
+            sub-page
+            handle
+            add-page
+            down-arrow
+            add-line
+</xmp>
+
+<h2>什么是subcontrol</h2>
+    
+<p>一个复杂的widget由多个部分组成,它们可以是一个widget,也可以是逻辑上的部件例如QCheckBox由icon和text两个部分组成,不仅可以定义text 的样式,还可以定义icon相关的样式,icon部分就是QCheckBox的subcontrol::indicator。</p>
+
+<p>Subcontrol的QSS和大多数widget的差不多,也支持盒子模型,可以自定义color,background,background-color,background-image,border, padding,margin,width,height等,也支持Pseudo-States(伪装态)。</p>
+
+<p>Subcontrol的绘制位置由subcontrol-origin,subcontrol-position,top,left来指定,就先从这几个属性开始入手。</p>
+
+    
+<h3>Subcontrol-Origin--要将子控件放在哪个区域</h3>
+
+<p>subcontrol-origin定义在parent widget中绘制subcontrol的参考矩形,默认在padding的矩形中绘制。subcontrol-origin有4个值可选:margin、border、padding、content。<b>下面是使用方法,需要注意你要将子控件放在margin中。那么父控件就要去设置margin的大小。</b></p>
+
+<xmp>
+      QScrollBar::up-arrow:vertical
+      {
+            subcontrol-origin : margin;
+            min-height : 10px;
+            background-color : deeppink;
+      }
+</xmp>
+    
+
+
+<h3>Subcontrol-Position--具体要在这个矩形的哪个位置绘制</h3>
+
+<p>使用subcontrol-position来指定,不同的subcontrol的subcontrol-position默认值不同,例如QSlider的handle的默认值是center center,QSpinBox的up-button的默认值是right top。subcontrol-position水平方向有3个值可选:left、center、right,subcontrol-position垂直方向有 3 个值可选:top、center、bottom</p>
+
+    
+<h3>Top和Left微调Subcontrol的位置</h3>
+    
+<p>Top和left的主要作用是:hover,:pressed 等发生时,用top和left偏移一点subcontrol,这样就看到subcontrol的鼠标动作了,偏移是相对于 subcontrol-orign和subcontrol-position确定的位置,top和left的默认值是0。</p>
+
+<xmp>
+
+                QSpinBox::up-button 
+                {
+                    subcontrol-origin: margin;
+                    subcontrol-position: left center;
+                }
+                
+                QSpinBox::up-button:hover 
+                {
+                    top: 1px;
+                    left: 1px;
+                }
+
+                
+                
+                # 样式表一览
+
+
+                /*竖直滚动条主体*/
+                QScrollBar:vertical
+                {
+                    background: #309AB8;
+                    min-width: 30px;
+                    border-radius: 15px;
+                    margin-top: 20px;      /*设置这个是为了上下箭头位置 属于子控件知识点*/
+                    margin-bottom: 20px;
+                }
+                
+                /*鼠标点击的滑块*/
+                QScrollBar::handle:vertical
+                {
+                    background: red;
+                    border-radius: 13px;
+                    min-height: 30px;
+                }
+                
+                
+                /* 翻页区域 这个一般设置成透明就行*/
+                QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical
+                {
+                    background:transparent;
+                }
+                
+                /* 箭头区域 */
+                QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical
+                {
+                    height: 20px;
+                    background: transparent;
+                    subcontrol-origin:margin; /*设置箭头放置在父控件的区域*/
+                }
+                
+                QScrollBar::add-line:vertical
+                {
+                    border-bottom-left-radius: 15px;
+                    border-bottom-right-radius: 15px;
+                }
+                
+                QScrollBar::sub-line:vertical
+                {
+                    border-top-left-radius: 15px;
+                    border-top-right-radius: 15px;
+                }
+                
+                
+                
+                /*上拉箭头 下拉箭头*/
+                QScrollBar::down-arrow:vertical,QScrollBar::up-arrow:vertical
+                {
+                    max-height: 10px;
+                }
+                
+                QScrollBar::down-arrow:vertical
+                {
+                    image:url(./up.svg);
+                }
+                
+                    
+                /*上拉箭头*/
+                QScrollBar::up-arrow:vertical
+                {
+                    image:url(./down.svg);
+                }
+                
+                /*微调子控件*/
+                QScrollBar::up-arrow:vertical:hover,QScrollBar::up-arrow:vertical:pressed
+                {
+                    top: 1px;
+                    left: 1px;
+                }
+                
+                QScrollBar::down-arrow:vertical:hover,QScrollBar::down-arrow:vertical:pressed
+                {
+                    top: 1px;
+                    left: 1px;
+                }
+                
+                
+                /*其他控件样式*/
+                QWidget
+                {
+                    border: none;
+                }
+                
+                QPushButton
+                {
+                    background-color:brown;
+                }
+</xmp>
+
+
+</body>
+</html>
+
+

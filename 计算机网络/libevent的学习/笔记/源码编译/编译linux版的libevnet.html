@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>编译linux版的libevnet</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<xmp>
+            sudo apt-get install libssl-dev
+
+            sudo apt-get install gcc make cmake p7zip-full zlib1g-dev vim pkg-config autoconf automake build-essential
+            
+            cd 源码目录
+            
+            mkdir build
+            
+            cd build
+            
+            cmake ..
+            
+            sudo make
+</xmp>
+
+ 
+</body>
+</html>
+
+
+

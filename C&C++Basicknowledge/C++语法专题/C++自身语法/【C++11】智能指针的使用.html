@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>C++-智能指针</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p><a href="https://www.cplusplus.com">【网络链接】参考文档 www.cplusplus.com</a></p>
+
+<p><a href="https://www.cnblogs.com/wxquare/p/4759020.html">【网络链接】参考文档 C++11中智能指针的原理、使用、实现</a></p>
+
+
+<h1>shared_ptr介绍</h1>
+
+<h3>常用的构造函数</h3>
+<xmp>
+            // 默认构造,执行后,shared_ptr没有需要管理的裸指针,且此时引用计数为0
+            constexpr shared_ptr() noexcept;
+
+            // 带初始化指针,执行后,shared_ptr管理指针p,并且引用计数为1
+            template <class U> explicit shared_ptr (U* p);
+
+            // 拷贝构造函数,如果x是空的话,那么构造出的shared_ptr对象没有需要管理的裸指针,并且引用计数为0
+            //              如果x不为空, 那么构造出的shared_ptr对象共享x资源的所有权,且引用计数 + 1
+            template <class U> shared_ptr (const shared_ptr<U>& x) noexcept;
+
+            // 移动构造函数,执行后,构造出的shared_ptr对象获得x管理的内容,包括其拥有的指针。而x变成一个空对象。
+            template <class U> shared_ptr (shared_ptr<U>&& x) noexcept;
+                
+                
+
+
+
+</xmp>
+
+
+<h3>赋值运算符重载函数</h3>
+<xmp>
+            // 拷贝赋值,执行后,使对象成为x资源的共享所有者,且引用计数 + 1。
+            template <class U> shared_ptr& operator= (const shared_ptr<U>& x) noexcept;
+
+            // 移动赋值执行后,将资源所有权从x转移到shared_ptr对象且不改变引用计数。x变成一个空对象。
+            template <class U> shared_ptr& operator= (shared_ptr<U>&& x) noexcept;
+
+
+
+
+
+</xmp>
+
+
+<h3>析构函数</h3>
+<xmp>
+            /*
+            注意引用计数值不同时,调用~shared_ptr的情况也不一样
+
+            (1) 如果引用计数大于1,执行~shared_ptr会使与其共享所有权的其他对象的使用计数减1。
+
+            (2) 如果引用计数为1,删除其拥有的指针指向的对象(如果shared_ptr对象是使用自定义销毁函数A,则调用A;否则,该函数使用delete删除)。
+
+            (3) 如果引用计数为0,即空对象,则执行~shared_ptr没有副作用。
+            */
+            ~shared_ptr();
+
+
+
+
+
+</xmp>
+
+
+<h3>其他成员函数</h3>
+<xmp>
+            // 使用此函数代替new一个对象并将其传给一个shared_ptr对象更安全
+            template <class T, class... Args>  shared_ptr<T> make_shared (Args&&... args);
+
+            //判断当前shared_ptr是否独占一个裸指针,空shared_ptr返回false,独占情况返回true,非独占返回false
+            bool unique() const noexcept;
+
+
+
+
+
+</xmp>
+
+<details>
+<summary> <font color="#ff0000">构造函数与引用计数代码展示</font> </summary>
+<xmp>
+            #include <iostream>
+            #include <memory>
+            using namespace std;
+
+            int main () {
+            
+                shared_ptr<int> p1;        //构造不带对象
+                shared_ptr<int> p1_1 = p1; //拷贝构造函数 拷贝一个空shared_ptr对象
+                shared_ptr<int> p1_2(p1);  //拷贝构造函数
+                shared_ptr<int> p1_3;
+                p1_3 = p1;
+            
+                cout << "===========输出一下初始引用计数========" << endl;
+                cout << "p1   引用计数 = " << p1.use_count()   << endl;
+                cout << "p1_1 引用计数 = " << p1_1.use_count() << endl;
+                cout << "p1_2 引用计数 = " << p1_2.use_count() << endl;
+                cout << "p1_3 引用计数 = " << p1_3.use_count() << endl;
+            
+                
+                cout << "===========创建一个int类型指针,然后初始化变量,输出操作后的引用计数========" << endl;
+                int * number = new int(10);
+                shared_ptr<int> p2(number); //带指针初始化 引用计数 + 1  
+                shared_ptr<int> p2_1 = p2;  //拷贝构造函数 引用计数 + 1
+                shared_ptr<int> p2_2(p2);   //拷贝构造函数 引用计数 + 1
+                shared_ptr<int> p2_3;
+                p2_3 = p2;                  //重载等号运算符 赋值   + 1
+            
+                cout << "p2   引用计数 = " << p2.use_count()   << endl;
+                cout << "p2_1 引用计数 = " << p2_1.use_count() << endl;
+                cout << "p2_2 引用计数 = " << p2_2.use_count() << endl;
+                cout << "p2_3 引用计数 = " << p2_3.use_count() << endl;
+            
+
+            
+                cout << "===========测试移动构造===========" << endl;
+                cout << "    第一种"<<endl;
+                shared_ptr<int> p2_4(move(p2_1));
+                cout << "p2   引用计数 = " << p2.use_count() << endl;
+                cout << "p2_1 引用计数 = " << p2_1.use_count() << endl;
+                cout << "p2_2 引用计数 = " << p2_2.use_count() << endl;
+                cout << "p2_3 引用计数 = " << p2_3.use_count() << endl; //p2_3共享的裸指针被转移到p2_4,所以没有引用计数
+                cout << "p2_4 引用计数 = " << p2_4.use_count() << endl;
+            
+                cout << "    第二种"<<endl;
+                shared_ptr<int> p2_5 = move(p2_2);
+                cout << "p2   引用计数 = " << p2.use_count() << endl;
+                cout << "p2_1 引用计数 = " << p2_1.use_count() << endl;
+                cout << "p2_2 引用计数 = " << p2_2.use_count() << endl;
+                cout << "p2_3 引用计数 = " << p2_3.use_count() << endl; 
+                cout << "p2_4 引用计数 = " << p2_4.use_count() << endl; 
+                cout << "p2_5 引用计数 = " << p2_5.use_count() << endl;  
+            
+                cout << "===========测试移动赋值===========" << endl;
+                shared_ptr<int> p2_6;
+                p2_6 = move(p2_3);
+                cout << "p2   引用计数 = " << p2.use_count() << endl;
+                cout << "p2_1 引用计数 = " << p2_1.use_count() << endl;
+                cout << "p2_2 引用计数 = " << p2_2.use_count() << endl;
+                cout << "p2_3 引用计数 = " << p2_3.use_count() << endl; 
+                cout << "p2_4 引用计数 = " << p2_4.use_count() << endl; 
+                cout << "p2_5 引用计数 = " << p2_5.use_count() << endl; 
+                cout << "p2_6 引用计数 = " << p2_6.use_count() << endl; 
+                return 0;
+            }
+    /*
+            ===========输出一下初始引用计数========
+            p1   引用计数 = 0
+            p1_1 引用计数 = 0
+            p1_2 引用计数 = 0
+            p1_3 引用计数 = 0
+            ===========创建一个int类型指针,然后初始化变量,输出操作后的引用计数========
+            p2   引用计数 = 4
+            p2_1 引用计数 = 4
+            p2_2 引用计数 = 4
+            p2_3 引用计数 = 4
+            ===========测试移动构造===========
+                第一种
+            p2   引用计数 = 4
+            p2_1 引用计数 = 0
+            p2_2 引用计数 = 4
+            p2_3 引用计数 = 4
+            p2_4 引用计数 = 4
+                第二种
+            p2   引用计数 = 4
+            p2_1 引用计数 = 0
+            p2_2 引用计数 = 0
+            p2_3 引用计数 = 4
+            p2_4 引用计数 = 4
+            p2_5 引用计数 = 4
+            ===========测试移动赋值===========
+            p2   引用计数 = 4
+            p2_1 引用计数 = 0
+            p2_2 引用计数 = 0
+            p2_3 引用计数 = 0
+            p2_4 引用计数 = 4
+            p2_5 引用计数 = 4
+            p2_6 引用计数 = 4
+     */
+
+
+
+
+
+</xmp>
+</details>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+
+<h2>多个shared_ptr对象共享同一资源问题</h2>
+
+<p>多个shared_ptr类型对象可以获取对同一个裸指针的所有权,所以这些shared_ptr对象就要对这个指针的销毁负责,最后被析构的shared_ptr对象需要去销毁共享的裸指针。</p>
+<p>shared_ptr对象在被析构时它对指针的共享权也会被销毁,一旦所有的共享指针所有权的shared_ptr对象都被销毁,被管理的指针对象也会被销毁。</p>
+<p><font color="#ff0000">shared_ptr对象之间仅能通过拷贝来共享所有权,如果两个shared_ptr对象在构造时传入相同的指针参数,那它们都将拥有指针而不是共享它。</font>当它们中的一个销毁被管理的指针,那么另一个shared_ptr对象会指向一个无效区域(<b>属于指针悬垂状态</b>),再次进行销毁,造成<b>double free</b>。可以使用make_shared初始化来解决此问题。</p>
+
+<details>
+<summary> <font color="#ff0000">shared_ptr对象共享同一资源</font></summary>
+
+<xmp>
+            #include <iostream>
+            #include <memory>
+            using namespace std;
+
+            //自定义类
+            class myclass{
+                public:
+                    myclass(){
+                        cout  << " 调用myclass构造函数 " << endl;
+                    }
+
+                    ~myclass(){
+                        cout  << " 调用myclass析构函数 " << endl;
+                    }
+                
+                    int m;
+            };
+            
+
+            int main(){
+                
+                //创建一个指针对象
+                myclass * p = new myclass();
+
+                //赋值一些成员变量状态
+                cout << " p = " << p << endl;
+                p->m = 100;
+                cout << " p->m = " << p->m << endl;
+
+                {
+                    //创建多个共享指针对象获取指针的所有权 
+                    //在共享指针对象生命周期结束后,指针p将被销毁
+            
+                    shared_ptr<myclass> ptr(p);
+            
+                    //【【【注意!!!! 下面再这么做这样是错误的!!!!!】】】, 在ptr和ptr2生命周期结束时会对裸指针执行两次析构,造成异常 free(): double free detected in tcache 2
+                    //shared_ptr<myclass> ptr2(p);   
+            
+                    //这是其中一种解法
+                    shared_ptr<myclass> ptr2 = ptr;  
+                    shared_ptr<myclass> ptr3 = ptr;
+            
+            
+                    cout << " 指针的地址 = " << ptr.get() << endl;
+                    cout << " 指针的地址 = " << ptr2.get() << endl;
+                    cout << " 指针的地址 = " << ptr3.get() << endl;
+                }
+
+                //此时裸指针已经被销毁,但是没有指向nullptr,很危险
+                cout << " p = " << p << endl;
+                cout << " p->m = " << p->m << endl;
+
+
+                cout << "========使用make_shared解决上面共享指针问题=====" << endl;
+                {
+                    //这是第二种解法,这样在编写代码的时候不会出现 new裸指针的情况
+                    shared_ptr<myclass> ptr = make_shared<myclass>();
+                    shared_ptr<myclass> ptr2 = ptr;
+                    shared_ptr<myclass> ptr3 = ptr;
+                }
+            
+                cout << "==============================================" << endl;
+                return 0;
+            }
+            
+            /* 执行结果:
+            
+                    调用myclass构造函数 
+                    p = 0x55f1daa71eb0
+                    p->m = 100
+                    指针的地址 = 0x55f1daa71eb0
+                    指针的地址 = 0x55f1daa71eb0
+                    指针的地址 = 0x55f1daa71eb0
+                    调用myclass析构函数 
+                    p = 0x55f1daa71eb0
+                    p->m = 0
+                ======使用make_shared解决上面共享指针问题=====
+                    调用myclass构造函数 
+                    调用myclass析构函数 
+                ==============================================
+            */
+
+
+</xmp>
+</details>
+
+<br>
+
+<h2>empty shared_ptr与null shared_ptr的区别</h2> 
+
+<p>没有任何指针的所有权的shared_ptr称为empty shared_ptr。</p>
+
+<p>有指针p的所有权,但是p指向nullptr的shared_ptr称为null shared_ptr并且不能解引用。</p>
+
+<p>请注意,空的shared_ptr不一定是null shared_ptr,null shared_ptr也不一定是空的shared_ptr。</p>
+
+<details>
+<summary> <font color="#ff0000">empty shared_ptr 与 null shared_ptr</font></summary>
+<xmp>
+            #include <iostream>
+            #include <memory>
+            using namespace std;
+            
+            int main(){
+            
+                cout << "=========empty shared_ptr 测试===========" << endl;
+            
+                shared_ptr<int> p; //empty shared_ptr
+            
+                int * ptest_1 = nullptr;
+                ptest_1 = p.get();
+                if(ptest_1 == nullptr){
+                    cout << "  ptest_1 = nullptr" << endl;
+                }else{
+                    cout << "  ptest_1 = " << ptest_1 << endl;
+                }
+            
+                //cout << "*p = " << *p << endl;  解引用nullptr引发段错误
+                cout << "p use_count = " << p.use_count() << endl; 
+                
+            
+            
+                cout << "=========nullptr shared_ptr 测试===========" << endl;
+            
+                int * point = nullptr;
+                shared_ptr<int> p2(point); //nullptr shared_ptr
+            
+                int * ptest_2 = p.get();
+                if(ptest_2 == nullptr){
+                    cout << "  ptest_2 = nullptr" << endl;
+                }else{
+                    cout << "  ptest_2 = " << ptest_2 << endl;
+                }
+            
+                //cout << "*p2 = " << *p2 << endl; 解引用nullptr引发段错误
+                cout << "p2 use_count = " << p2.use_count() << endl;
+            
+                return 0;
+            }
+        
+            /*  执行结果:    从测试结果上看,【empty shared_ptr】和【nullptr shared_ptr】存储的指针都是nullptr
+                            但是【nullptr shared_ptr】的引用计数是1,【empty shared_ptr】的引用计数是0
+                            =========empty shared_ptr 测试===========
+                            ptest_1 = nullptr
+                            p use_count = 0
+                            =========nullptr shared_ptr 测试===========
+                            ptest_2 = nullptr
+                            p2 use_count = 1
+            */
+
+</xmp>
+</details>
+
+<br>
+
+<h2>shared_ptr的线程安全</h2>
+
+<p>shared_ptr其内部有两个变量,引用计数和存储的裸指针。其中引用计数是原子操作,<b>所以对于shared_ptr的读操作是线程安全的。shared_ptr读写操作不是线程安全的,需要加锁</b></p>
+
+<hr>
+
+<h1>weak_ptr介绍</h1>
+
+<p>为什么需要weak_ptr? weak_ptr是为了配合shared_ptr而引入的一种智能指针。<font color="#ff0000">weak_ptr可以从一个shared_ptr或者另一个weak_ptr对象构造,获得资源的观测权。但weak_ptr没有共享资源,它的构造不会引起指针引用计数的增加。</font></p>
+<p>当出现这种<b>循环引用</b>情况时,A类对象和B类对象是永远不会被析构的,这会导致内存泄露。</p>
+
+<details>
+<summary> shared_ptr循环引用代码示例 </summary>
+<xmp> 
+            #include <iostream>
+            #include <memory>
+            using namespace std;
+        
+            class A;
+        
+            //类的定义
+            class B{
+                public:
+                void  SetPtr(shared_ptr<A>  ptr){
+                    m_ptr = ptr;    
+                }
+        
+                ~B(){
+                    cout << "调用 ~B() 函数" << endl;
+                }
+        
+                shared_ptr<A> m_ptr;
+            };
+        
+            class A{
+                public:
+                void  SetPtr(shared_ptr<B>  ptr){
+                    m_ptr = ptr;
+                }
+        
+                ~A(){
+                    cout << "调用 ~A() 函数" << endl;
+                }
+        
+                shared_ptr<B> m_ptr;
+            };
+        
+            int main(){
+        
+                //shared_ptr循环引用 A、B类对象中的shared_ptr互相引用对方
+        
+                shared_ptr<A> ptr_a(new A);  //(1) 此时ptr_a的引用计数是1
+                shared_ptr<B> ptr_b(new B); 
+        
+                ptr_a->SetPtr(ptr_b);       //(2) 调用shared_ptr赋值运算符 此时ptr_a的引用计数是2
+                ptr_b->SetPtr(ptr_a);       //(3) ptr_b 的引用计数情况和ptr_a相同
+        
+                cout << "ptr_a use_count = " << ptr_a.use_count() << endl;
+                cout << "ptr_b use_count = " << ptr_b.use_count() << endl;
+        
+                return 0;
+        
+                /*
+                    (4) main函数结束时,ptr_b、ptr_a生命周期结束 还剩下A类中shared_ptr<B> m_ptr引用B对象内存空间,  
+                        B类中shared_ptr<A> m_ptr引用A对象内存空间 
+                        
+                        B对象要被析构,需要shared_ptr<B> m_ptr生命周期结束,可这需要A对象先被析构,那么就需要shared_ptr<A> m_ptr生命周期结束,可这需要B对象被析构 【达成循环】
+                */        
+            }
+
+
+            /*
+                //执行结果
+                ptr_a use_count = 2
+                ptr_b use_count = 2
+            */
+
+
+
+
+
+</xmp>
+</details>
+
+<p>针对上面会出现的<b>循环引用</b>的情况,C++中又增加了weak_ptr(弱指针)加以避免。weak_ptr可以通过std::weak_ptr::lock转换为shared_ptr</p>
+
+<details>
+<summary> weak_ptr解决循环引用 </summary>
+<xmp>
+            #include <iostream>
+            #include <memory>
+            
+            using namespace std;
+        
+            class A;
+        
+            //类的定义
+            class B{
+                public:
+                void  SetPtr(shared_ptr<A>  ptr){
+                    m_ptr = ptr;
+                }
+        
+                ~B(){
+                    cout << "调用 ~B() 函数" << endl;
+                }
+        
+                weak_ptr<A> m_ptr;  //=================================修改成weak_ptr
+            };
+        
+            class A{
+                public:
+                void  SetPtr(shared_ptr<B>  ptr){
+                    m_ptr = ptr;
+                }
+        
+                ~A(){
+                    cout << "调用 ~A() 函数" << endl;
+                }
+        
+                weak_ptr<B> m_ptr;   //================================修改成weak_ptr
+            };
+        
+            int main(){
+                shared_ptr<A> ptr_a(new A);
+                shared_ptr<B> ptr_b(new B);
+        
+                ptr_a->SetPtr(ptr_b);
+                ptr_b->SetPtr(ptr_a);
+        
+                cout << "ptr_a use_count = " << ptr_a.use_count() << endl;
+                cout << "ptr_b use_count = " << ptr_b.use_count() << endl;
+        
+                return 0;
+            }
+        
+            /* 执行结果:
+                ptr_a use_count = 1
+                ptr_b use_count = 1
+                调用 ~B() 函数
+                调用 ~A() 函数
+            */
+
+
+
+
+
+</xmp>
+</details>
+
+<hr>
+
+<h1>unique_ptr【TODO】</h1>
+
+<br>
+</body>
+</html>
+
+

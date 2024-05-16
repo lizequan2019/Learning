@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/pic">
+        <file>PIC/CHART.svg</file>
+        <file>PIC/china.svg</file>
+        <file>PIC/Dashboard.svg</file>
+        <file>PIC/error.svg</file>
+        <file>PIC/map.svg</file>
+        <file>PIC/msg.svg</file>
+    </qresource>
+</RCC>

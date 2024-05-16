@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>C++多线程-第三章-3.2-使用互斥保护共享数据</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h2>3.2 使用互斥保护共享数据</h2>
+
+<h3>3.2.1 和 3.2.2 总结</h3>
+
+<p><b>互斥量</b>是一种<b>同步原语(synchronization primitive)</b>,这是一种最通用的共享数据保护措施之一,当然它也不是万金油,使用不当也会出现死锁,数据的过保护或者欠保护的问题。</p>  
+
+<pre>
+
+        互斥量的使用:
+
+            通过实例化  std::mutex  创建互斥量实例,成员函数  lock()  可对互斥量上锁,  unlock()  为解锁。不过,<b>不推荐直接去调用成员函数</b>,调用
+            成员数就意味着,必须在每个运行流程结束都要去调用  unlock()  (包括异常的情况)。
+            
+            C++标准库为互斥量提供了RAII模板类  std::lock_guard  ,在构造时就能提供已锁的互斥量,并在析构时进行解锁,从而保证了互斥量能被正确解锁。
+
+</pre>
+
+<p>上面这段是书中的话,所以要注意在使用互斥量的时候也要尽量使用RAII方法。</p>
+
+<p>当然使用互斥量也会存在隐患,比如被保护数据出现在互斥量作用域外,最常见的就是函数中将指向保护数据的指针或引用作为函数的返回值传递给外界,还有可能通过指针或者引用传入到函数的数据也可能是其他位置的保护数据。</p>
+
+<details> 
+
+<summary> <font color="#ff0000">被保护数据出现在互斥量作用域外例子</font> </summary>
+
+<pre>
+            class some_data{
+                int a;
+                std::string b;
+
+                public:
+                    void do_something();
+            };
+
+            class data_wrapper{
+                private:
+
+                    some_data data;  //被保护的数据
+                    std::mutex m;
+
+                public:
+
+                    template<typename Function>
+                    void process_data(Function func){
+                        std::lock_guard<std::mutex> l(m);
+                        func(data);    // 1 传递"保护"数据给用户函数
+                    }
+            };
+
+            some_data* unprotected;
+
+
+            //通过此函数将保护数据传递给全局数据unprotected
+            void malicious_function(some_data & protected_data){
+                unprotected = &protected_data;
+            }
+
+            data_wrapper x;
+
+
+            //这里执行被保护数据出现在了互斥量作用域外
+            void foo(){
+
+                x.process_data(malicious_function);    // 2 传递一个恶意函数
+                unprotected->do_something();           // 3 在无保护的情况下访问保护数据
+            }
+</pre>
+
+</details>  
+
+<h3>3.2.3 发现接口固有的条件竞争</h3>
+
+<p>即使用了互斥量和其他的保护机制,接口的条件竞争依旧会存在,这是接口设计的问题。</p> 
+
+<p>举例如下,下面的代码在多线程中存在接口条件竞争。如下图,当  s  中只有一个元素时,线程1提前一步将数据  pop()  ,那么线程2在  pop()  时就会出现错误。即使在  empty() top() pop()  这些函数中使用互斥量对  s  进行保护也无济于事,<b><font color="#ff00ff">这里不要想把这一段代码全部用互斥量保护,这么做就和没有使用多线程一样</font></b>。</p>
+
+<details>
+<summary> <font color="#ff0000">带有接口条件竞争的堆栈类</font> </summary>
+<pre>
+
+        template<typename T,typename Container=std::deque<T> >
+        class stack
+        {
+            public:
+                explicit stack(const Container&);
+                explicit stack(Container&& = Container());
+                template <class Alloc> explicit stack(const Alloc&);
+                template <class Alloc> stack(const Container&, const Alloc&);
+                template <class Alloc> stack(Container&&, const Alloc&);
+                template <class Alloc> stack(stack&&, const Alloc&);
+            
+                bool empty() const;
+                size_t size() const;
+                T& top();
+                T const& top() const;
+                void push(T const&);
+                void push(T&&);
+                void pop();
+                void swap(stack&&);
+        };
+
+        
+
+        //实际使用
+        stack<int> s;
+        if (! s.empty()){               // 1
+            int const value = s.top();  // 2
+            s.pop();                    // 3
+            do_something(value);
+        }
+</pre>
+</details>
+
+<img  src="../../../../C&C++Basicknowledge/C++多线程专题/C++并发实战阅读笔记/3章/经典的接口竞态条件.png"></img>
+
+<br>
+<br>
+
+<p>除此之外,书中还举了一个隐藏更深的情况,还是上面的代码,但是执行顺序如下,当  s  中有两个元素时,按照下面的执行顺序,导致栈中一个元素被使用两次(s.top()返回栈顶的元素),而另一个元素则没有被使用,<b>最可怕的是居然不会报错</b>。</p>
+
+<br>
+
+<img  src="../../../../C&C++Basicknowledge/C++多线程专题/C++并发实战阅读笔记/3章/经典的接口竞态条件2.png"></img>
+
+
+<pre>
+
+
+
+        <font color="#ff0000">书中重点</font>
+
+        假设有一个  stack< vector < int > >,  vector  是一个动态容器,当你拷贝一个  vetcor  ,标准库会从堆上分配很多内存来完成这次拷贝。当这个系统
+        处在重度负荷,或有严重的资源限制的情况下,这种内存分配就会失败,所以  vector  的拷贝构造函数可能会抛出一个  std::bad_alloc  异常。当  
+        vector  中存有大量元素时,这种情况发生的可能性更大。
+            
+        当  pop()  函数返回弹出值时(也就是从栈中将这个值移除)会有一个潜在的问题:这个值被返回到调用函数的时候,栈才被改变;但当拷贝数据的时候,调
+        用函数抛出一个异常会怎么样? 如果事情真的发生了,要弹出的数据将会丢失;它的确从栈上移出了,但是拷贝失败了! 
+        
+        std::stack  的设计人员将这个操作分为两部分:先获取顶部元素  top()  ,然后从栈中移除  pop()  。这样,在不能安全的将元素拷贝出去的情况下,
+        栈中的这个数据还依旧存在,没有丢失。当问题是堆空间不足,应用可能会释放一些内存,然后再进行尝试。不幸的是,<b>这样的分割操作却制造了本想避免或消除的条件竞争</b>。
+        
+        幸运的是,我们还有的别的选项,但是使用这些选项是要付出代价的。
+
+
+
+</pre>
+
+<p><font color="#ff00ff">解决的方法就是重新设计堆栈接口实,书中给出几种方法</font>。</p>
+
+<h4>方法1 传入一个引用</h4> 
+
+<pre>
+
+        std::vector<int> result;
+        some_stack.pop(result);  //some_stack是自定义的栈类对象
+
+</pre>
+
+<p>如果是少量数据,数据类型都是C++原生的,问题不大。但当数据量很大时,构造一个临时使用的对象就太慢了,而且如果是传入传出自定义类型的话,还需要支持一些赋值、拷贝操作。</p>
+
+<br>
+
+<h4>方法2 无异常抛出的拷贝构造函数或移动构造函数</h4>
+
+<p>在上面提到,对于有返回值的  pop()  函数来说,只有"异常安全"方面的担忧(当返回值时可以抛出一个异常)。很多类型都有拷贝构造函数,它们不会抛出异常,并且随着新标准中对"右值引用"的支持,很多类型都将会有一个移动构造函数,即使他们和拷贝构造函数做着相同的事情,它也不会抛出异常。一个有用的选项可以限制对线程安全的栈的使用,并且能让栈安全的返回所需的值,而不会抛出异常。</p>
+
+<p>虽然安全,但非可靠。</p>
+
+<p>尽管能在编译时可使用  std::is_nothrow_copy_constructible  和  std::is_nothrow_move_constructible  类型特征,让拷贝或移动构造函数不抛出异常,但是这种方式的局限性太强。用户自定义的类型中,会有不抛出异常的拷贝构造函数或移动构造函数的类型,那些有抛出异常的拷贝构造函数,但没有移动构造函数的类型往往更多(这种情况会随着人们习惯于C++11中的右值引用而有所改变)。如果这些类型不能被存储在线程安全的栈中,那将是多么的不幸</p>
+
+<br>
+
+<h4>方法3 返回指向弹出值的指针</h4>
+
+<p>返回一个指向弹出元素的指针,而不是直接返回值。指针的优势是自由拷贝,并且不会产生异常【TODO疑惑 为什么不会产生异常】。缺点就是返回一个指针需要对对象的内存分配进行管理,对于<b>简单数据类型(比如:int),内存管理的开销要远大于直接返回值</b>。</p>
+
+<p>对于选择这个方案的接口,使用  std::shared_ptr  是个不错的选择;不仅能避免内存泄露(因为当对象中指针销毁时,对象也会被销毁),而且标准库能够完全控制内存分配方案,也就不需要new和delete操作。这种优化是很重要的:因为堆栈中的每个对象,都需要用new进行独立的内存分配,相较于非线程安全版本,这个方案的开销相当大。</p>
+
+<br>
+
+<h4>方法4 '选项1 + 选项3' or '选项1 + 选项2'</h4>
+
+<p>对于通用的代码来说,灵活性不应忽视。当你已经选择了选项2或3时,再去选择1也是很容易的。这些选项提供给用户,让用户自己选择对于他们自己来说最合适,最经济的方案。</p>
+
+<br>
+
+<h4>一个线程安全的堆栈例子</h4>
+
+<p>下面实现了接口没有条件竞争的堆栈类定义,  top  和  pop  函数又融合成了一个  pop  函数,但是会出现拷贝数据抛出异常的问题。为了解决这个问题,设计接口是采用指针或引用向外传递数据。
+
+<p>我个人认为,一般正常使用stack时,在使用完栈顶资源后都要将移除栈顶资源,就像以前使用完top()后面就要紧跟pop(),所以书中才会把两个函数合并到一起。</p>
+
+<details>
+
+<summary> <font color="#ff0000">线程安全的堆栈示例代码</font> </summary>
+
+<pre>
+<xmp>
+        #include <exception>
+        #include <memory>
+        #include <mutex>
+        #include <stack>
+</xmp>
+        struct empty_stack: std::exception{
+            const char* what() const throw(){
+                    return "empty stack!";
+            };
+        };
+        
+        template<typename T>
+        class threadsafe_stack
+        {
+            private:
+        
+                std::stack<T> data;
+                mutable std::mutex m;
+            
+            public:
+        
+                threadsafe_stack()
+                    : data(std::stack<T>()){}
+            
+                threadsafe_stack(const threadsafe_stack& other){
+                        std::lock_guard<std::mutex> lock(other.m);
+                        data = other.data;
+                }
+        
+                threadsafe_stack& operator=(const threadsafe_stack&) = delete; //赋值操作重载函数 删除
+        
+                void push(T new_value){
+                        std::lock_guard<std::mutex> lock(m);
+                        data.push(new_value);
+                }
+                
+                std::shared_ptr<T> pop(){
+                        std::lock_guard<std::mutex> lock(m);
+                        if(data.empty()) throw empty_stack(); // 在调用pop前,检查栈是否为空
+                        
+                        std::shared_ptr<T> const res(std::make_shared<T>(data.top())); // 在修改堆栈前,分配出返回值
+                        data.pop();
+                        return res;
+                }
+                
+                void pop(T& value){
+                        std::lock_guard<std::mutex> lock(m);
+                        if(data.empty()) throw empty_stack();
+                        
+                        value=data.top();
+                        data.pop();
+                }
+                
+                bool empty() const{
+                        std::lock_guard<std::mutex> lock(m);
+                        return data.empty();
+                }
+        };
+</pre>
+
+</details>
+
+<h3>3.2.4 死锁:问题描述与解决方案</h3>
+
+<h4>问题描述</h4>
+
+<p>正如前面提到,使用全局的互斥量并不好,一般都是在类中声明一个私有的互斥量,当多个类对象一起使用时,也就会出现多个互斥量交错使用的情况。</p>
+
+<p>当一个线程函数fun中需要操作两个具有私有互斥量类对象A、B时,fun需要将A、B的互斥量进行加锁防止其他线程函数操作。 </p> 
+
+<p>可以预见的是,对A、B操作的线程函数一定会有很多,每个函数都需要对互斥量加锁,<b>那么这些线程函数对类对象的加锁顺序就很重要</b>,如果所有线程函数的加锁顺序一致就使得互斥量正常起作用,否则就会造成死锁(<b>fun1先对B实例的互斥加锁,而fun2先对A的互斥加锁,那么接下来fun1等待A的互斥解锁,fun2等待B的互斥解锁</b>)。</p>
+
+<details>
+
+<summary> <font color="#ff0000">加锁顺序导致的死锁代码</font> </summary>
+
+<pre>
+    //多个互斥量加锁顺序导致的死锁
+<xmp>
+    #include<iostream>
+    #include<thread>
+    #include<unistd.h>
+    #include<assert.h>
+    #include<mutex>
+</xmp>
+    using namespace std;
+
+    //一个测试类,每个实例内部持有一个互斥锁
+    class test{
+        public:
+            void lock(){ m_mutex.lock();}
+            void unlock(){m_mutex.unlock();}
+
+        public: 
+            mutex & getMutex(){return m_mutex;}
+
+        private:
+            mutex m_mutex;
+    };
+
+    test a,b; //全局变量test对象
+
+    //模拟的交换函数  
+    void swap(test& _a,test& _b){
+        cout << "进入交换函数" << endl;
+        _a.lock();
+        sleep(2); //睡眠是为了更容易复现出死锁现象,等待两个线程都锁住了一个互斥量
+        _b.lock();
+
+        _a.unlock();
+        _b.unlock();
+    }
+
+
+    //两个线程函数 注意swap的传参顺序不同  这样worker1会锁住a的互斥量  worker2会锁住b的互斥量,造成死锁 
+    void worker1(){ 
+        cout << "进入线程1" << endl;
+        swap(a,b); 
+    }
+
+    void worker2(){ 
+        cout << "进入线程2" << endl;
+        swap(b,a); 
+    }
+
+    int main(){
+
+        cout << "开始" << endl;
+        //创建两个线程
+        thread pid1(worker1);
+        thread pid2(worker2);
+
+        pid1.join();
+        pid2.join();
+        cout << "结束" << endl;
+        return 0;
+    }
+
+
+    /*执行结果  
+        开始
+        进入线程1
+        进入交换函数
+        进入线程2
+        进入交换函数  <----- 从这后面就进入死锁状态了
+    */
+
+
+</pre>
+
+</details>
+
+<h4>解决方案</h4> 
+
+<p>由上面可知,最简单的方法就是约定大家在写线程函数的时候统一加锁顺序,解锁顺序。但是这使得程序难以维护,不健壮。下面再介绍两种避免死锁的方法。 </p>
+
+<p>第一种方法,核心思想是使用入参的地址作为加锁顺序,代码中使用引用传参,那么入参和实际变量地址是相同的。值传递和指针变量的传参方式我也试过了,地址肯定不一样了,但是两个线程函数中地址较小的变量是一致的,这样加锁顺序就一致了。</p>
+
+<details>
+
+<summary> <font color="#ff0000">第一种解决方案示例代码</font> </summary>
+<pre>
+    //使用入参的地址作为加锁顺序,大部分代码和死锁例子相同,就是升级了swap()函数
+    <xmp>
+        #include<iostream>
+        #include<thread>
+        #include<unistd.h>
+        #include<assert.h>
+        #include<mutex>
+    </xmp>
+        using namespace std;
+
+        class test{
+            public:
+                void lock(){ m_mutex.lock();}
+
+                void unlock(){m_mutex.unlock();}
+
+            public: 
+                mutex & getMutex(){return m_mutex;}
+
+            private:
+                mutex m_mutex;
+        };
+
+        test a,b;
+
+        //升级的交换函数,用编程技巧解决了加锁顺序导致的死锁问题
+        void swap_new(test & _a,test & _b){
+            cout << "进入交换函数" << endl;
+
+            cout << " &_a地址 = " << &_a << "  &_b地址 = " << &_b << endl;
+
+            if(&_a < &_b){//地址小的类对象先加锁
+                _a.lock();
+                sleep(1);
+                _b.lock();
+
+                _a.unlock();
+                _b.unlock();
+            }else{
+                _b.lock();
+                sleep(1); 
+                _a.lock();
+
+                _b.unlock();
+                _a.unlock();
+            }
+        }
+
+        void swap_new2(test * _a,test * _b){
+            cout << "进入交换函数" << endl;
+
+            cout << " _a地址 = " << _a << "  _b地址 = " << _b << endl;
+            if(_a < _b){//地址小的类对象先加锁
+                (*_a).lock();
+                sleep(1);
+                (*_b).lock();
+
+                (*_a).unlock();
+                (*_b).unlock();
+            }else{
+                (*_b).lock();
+                sleep(1); 
+                (*_a).lock();
+
+                (*_b).unlock();
+                (*_a).unlock();
+            }
+        }
+
+
+        void worker1(){ 
+            cout << "进入线程1" << endl;
+            swap_new(a,b); 
+        }
+
+        void worker2(){ 
+            cout << "进入线程2" << endl;
+            swap_new(b,a); 
+        }
+
+        int main(){
+
+            cout << "开始" << endl;
+            //创建两个线程
+            thread pid1(worker1);
+            thread pid2(worker2);
+
+            pid1.join();
+            pid2.join();
+            cout << "结束" << endl;
+            return 0;
+        }
+
+        /*
+            执行结果:
+                        开始
+                        进入线程1
+                        进入交换函数
+                        进入线程2
+                        进入交换函数
+                        结束
+        
+        */
+
+</pre>
+</details>
+
+<p>第二种是书中提供的基于C++11新特性的解决方法,使用  std::lock()  ,这种方法的好处是可以进行多个互斥量的加锁,并且如果有一个互斥量加锁失败则会执行全部互斥量解锁,所以  std::lock  要么将两个锁都锁住,要不一个都不锁。相比较而言,上面的<b>第一种方法在处理2个互斥量以上的情况代码会变得复杂</b>。</p>
+
+<details>
+
+<summary>  <font color="#ff0000">第二种解决方案示例代码</font> </summary>
+<pre>
+        //使用std::lock()解决死锁问题,大部分代码和死锁代码相同
+
+        <xmp>
+        #include<iostream>
+        #include<thread>
+        #include<unistd.h>
+        #include<assert.h>
+        #include<mutex>
+        </xmp>
+
+        using namespace std;
+
+        class test{
+            public:
+                void lock(){ m_mutex.lock();}
+                void unlock(){m_mutex.unlock();}
+
+            public: 
+                mutex & getMutex(){return m_mutex;}
+
+            private:
+                mutex m_mutex;
+        };
+
+        test a,b;
+
+        //模拟的交换函数  
+        void swap(test & _a,test & _b){
+            //std::lock可以一次性锁住多个(两个以上)的互斥量
+            std::lock(_a.getMutex(), _b.getMutex()); 
+
+            <xmp>
+            //也可以使用lock_guard自动管理互斥量的解锁
+            // std::lock_guard<std::mutex> lock_a(_a.getMutex(),std::adopt_lock);
+            // std::lock_guard<std::mutex> lock_b(_b.getMutex(),std::adopt_lock); 
+            </xmp>
+
+            //手动解锁
+            _a.unlock();
+            _b.unlock();
+        }
+
+        void worker1(){ 
+            cout << "进入线程1" << endl;
+            swap(a,b); 
+        }
+
+        void worker2(){ 
+            cout << "进入线程2" << endl;
+            swap(b,a); 
+        }
+
+        int main(){
+
+            cout << "开始" << endl;
+            //创建两个线程
+            thread pid1(worker1);
+            thread pid2(worker2);
+
+            pid1.join();
+            pid2.join();
+            cout << "结束" << endl;
+            return 0;
+        }
+
+    /*
+            执行结果:
+
+                    开始
+                    进入线程1
+                    进入线程2
+                    结束
+        
+        */
+
+</pre>
+</details>
+
+<h3>3.2.5 避免死锁的进阶指导</h3>
+
+<p>不仅是使用锁才会出现,死锁的本质是多个线程互相等待导致的,所以可以归纳一个思想,<b>如果有机会就上,不要等待别的线程</b>。以下提供一些个人的指导建议,如何识别死锁,并消除其他线程的等待。</p> 
+
+<h4>避免嵌套锁</h4>
+
+<p>线程获得一个锁时,就别再去获取第二个。每个线程只持有一个锁,就不会产生死锁。当需要获取多个锁,使用  std::lock  来做这件事,避免产生死锁。</p>
+
+
+<h4>避免在持有锁时调用外部代码</h4>
+
+<p>如果线程中已经对一个互斥量加锁,此时再调用<b>外部代码接口</b>,外部代码中也可能会有互斥量加锁,那么现在就又产生了嵌套锁的问题。但是有时候,这种情况很难避免,这时候只能退而求其次,按照顺序加锁,再按照顺序解锁。</p>
+
+
+<h4>使用锁的层次结构</h4>
+
+<p>这也像是一种定义加锁顺序,但锁层次结构可以提供一种方法来检查在运行时是否遵守了约定。这个方法是将应用程序划分为多个层级,并识别给定层级中所有可能被锁定的互斥对象。当代码试图锁定互斥量A时,如果A已经持有来自较低层的锁,则不允许锁定A。你可以在运行时进行这样的检查,通过为每个互斥量分配层数以及记录每个线程锁定了哪些互斥量。</p>
+
+<p>下面是层次锁的示例代码,层级高的互斥量必须等待层级低的互斥量解锁后才能再加锁,这样可以在程序运行时检查,如果违反就抛出异常,不过能用到的次数也不会太多,这里就是记录一下以防不时之需。【TODO  thread_local 线程本地变量还没看,所以下面的示例代码和书上的不一样】</p>
+
+<details>
+
+<summary> <font color="#ff0000">层次锁示例代码</font> </summary>
+<pre>
+        <xmp>
+        #include <iostream>
+        #include <thread>
+        #include <mutex>
+        #include <limits.h>
+        #include <unistd.h>
+        </xmp>
+        using namespace std;
+    
+        //自定义 层次互斥量
+        //当有层级低的互斥量加锁时,高层级互斥量无法加锁
+        class hierarchical_mutex
+        {
+            std::mutex internal_mutex; 
+            
+            unsigned long const hierarchy_value; //当前层级值
+    
+            unsigned long previous_hierarchy_value; //上次层级值
+            
+            //表示当前线程的层级值,它被初始化为最大值,所以最初所有线程都能被锁住。
+            static unsigned long this_thread_hierarchy_value;
+            
+            //检查是否违反层级
+            void check_for_hierarchy_violation(){
+                    //当前线程层级值不能低于层级互斥量的值,否则抛出异常
+                    if(this_thread_hierarchy_value <= hierarchy_value) {
+                        throw std::logic_error("mutex hierarchy violated"); //我觉得抛出异常是好的,毕竟死锁错误也不需要再弥补了
+                    }
+            }
+            
+            //更新层级值
+            void update_hierarchy_value(){
+                    previous_hierarchy_value = this_thread_hierarchy_value;  
+                    this_thread_hierarchy_value = hierarchy_value;
+            }
+        
+    
+        public:
+    
+            //构造函数 初始化当前层级值和上次层级值
+            explicit hierarchical_mutex(unsigned long value):hierarchy_value(value),previous_hierarchy_value(0){
+    
+            }
+    
+            //拷贝构造函数 因为hierarchical_mutex构造函数需要参数,所以必须使用初始化列表赋值
+            hierarchical_mutex(const hierarchical_mutex & _mutex)
+                :hierarchy_value(_mutex.hierarchy_value),
+                previous_hierarchy_value(_mutex.previous_hierarchy_value){
+    
+            }
+    
+            //层级互斥量的加锁
+            void lock(){
+                check_for_hierarchy_violation();
+                internal_mutex.lock();  
+                update_hierarchy_value(); 
+            }
+            
+            //层级互斥量的解锁
+            void unlock(){
+                this_thread_hierarchy_value = previous_hierarchy_value;
+                internal_mutex.unlock();
+            }
+            
+            //层级互斥量的尝试加锁
+            bool try_lock(){
+                check_for_hierarchy_violation();
+                if(!internal_mutex.try_lock()){
+                    return false;
+                }
+                
+                update_hierarchy_value();
+                return true;
+            }
+        };
+    
+        unsigned long hierarchical_mutex::this_thread_hierarchy_value = INT_MAX;  
+    
+        //上面是层级互斥量的定义=====================================================================
+    
+        //使用层级互斥量的类
+        class test{
+            public:
+    
+                test(hierarchical_mutex _mutex):m_mutex(_mutex){
+    
+                }
+    
+                void lock(){ m_mutex.lock();}
+    
+                void unlock(){m_mutex.unlock();}
+    
+            private:
+                hierarchical_mutex m_mutex;
+        };
+    
+        hierarchical_mutex high_level_mutex(10000);
+        hierarchical_mutex low_level_mutex(5000); 
+    
+    
+        test a(high_level_mutex);
+        test b(low_level_mutex);
+    
+    
+        //模拟的交换函数  
+        void swap(test & _a,test & _b){
+            _a.lock();
+            sleep(1);
+            _b.lock();
+    
+            //手动解锁
+            _a.unlock();
+            _b.unlock();
+        }
+    
+    
+        void worker1(){ 
+            cout << "进入线程1" << endl;
+            try{
+                swap(a,b); 
+            }
+    
+            catch(std::exception& e){
+                cout << "线程1错误 " << e.what() << endl;
+            }
+        }
+    
+    
+        void worker2(){ 
+            cout << "进入线程2" << endl;
+            try{
+                swap(b,a); 
+            }
+    
+            catch(std::exception& e){
+                cout << "线程2错误 " << e.what() << endl;
+            }
+        }
+    
+    
+        int main(){
+    
+            cout << "开始" << endl;
+            //创建两个线程
+            thread pid1(worker1);
+            thread pid2(worker2);
+    
+            pid1.join();
+            pid2.join();
+            cout << "结束" << endl;
+            return 0;
+        }
+    
+        /*
+            执行结果 : 
+                    开始
+                    进入线程1
+                    进入线程2
+                    线程2错误 mutex hierarchy violated   <=== 出现了死锁错误,但是并没有死锁而是直接抛出异常
+                    线程1错误 mutex hierarchy violated   
+                    结束
+            */
+</pre>
+</details>
+
+<h3>3.2.6 std::unqiue_lock 灵活的锁</h3>
+
+<h3>3.2.7 不同域中互斥量所有权的传递</h3>
+
+<h3>3.2.8 锁的粒度</h3>
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>笔记列表</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+    <h1>工作成长</h1>
+    
+    <p><a href="https://learn.microsoft.com/zh-cn/cpp/build/reference/exports?view=msvc-170">1-1【网络链接】EXPORTS</a></p>
+    
+    <p><a href="https://learn.microsoft.com/zh-cn/cpp/build/exporting-from-a-dll?view=msvc-170">1-2【网络链接】从DLL导出</a></p>
+    
+    <p><a href="./accumulation/工作难题记录/程序界面无法拖拽到4K副屏问题.md">2.【本地链接】程序界面无法拖拽到4K副屏问题.md</a></p>
+    
+    
+    <p>3. xdg-mime关联文件的使用,手动敲命令还是很好用的,但是用shell脚本实现是比较曲折的</p> 
+    
+    <p>
+       <pre>
+          (1) xdg-mime default xxx.desktop  application/xxxxxx 在uos脚本中运行正常,可以修改~/.config/share/applications/mimeapps.list,
+                但是在银河麒麟V10SP1下运行后  ~/.config/share/applications/mimeapps.list没有被修改,为了兼容,现在手动将提前写好的mimeapps.list,但也有风险,文件覆盖以前的内容就丢失了。
+                ~目录下的./config和./local的区别也不太懂,看看《Filesystem Hierarchy Standard》学习一下,也没找到细致的讲解
+             
+          (2) 银河V10SP1下界面右键文件打开方式,没有对应的小图标,UOS有,这个也许还和xdg-mime使用有关
+             
+          (3) 这次写脚本也是曲折,终于用上了三剑客了,还有for循环中使用sed,总结脚本经验
+       
+          (4) systemd服务文件配置
+       </pre>
+    </p>
+    
+    <p>5. git revert 的学习</p>
+    
+    <p>6. linux如何屏蔽键盘的部分按键点击</p>
+    
+    <p><a href="./QT/QT-语言家/QT语言家设置调色板汉化.html">7.【本地链接】QT语言家设置调色板汉化</a></p>
+    
+    <p>8. 自动升级工程的完善,了解代码并绘制状态机</p>
+    
+    <hr>
+    <br>
+    <br>
+    
+    
+    <h2>学习计划</h2>
+    
+    
+    <h3>多线程学习</h3>
+    
+    <p>1. <a href="./C&C++Basicknowledge/C++多线程专题/C++并发实战阅读笔记/3章/纲领.html">【本地链接】多线程第三章-线程之间的数据共享</a></p>
+    
+    <p>2. 多线程第六章</p>
+    
+    <h3>libevent学习</h3>
+    
+    <p>1. <a href="./计算机网络/libevent的学习/笔记/源码编译/在windows下编译linux版的libevnet.md">【本地链接】libevent源码编译-linux版</a></p>
+    
+    <p>2. <a href="./计算机网络/libevent的学习/笔记/源码编译/在windows下编译安卓版的libevent.md">【本地链接】libevent源码编译-安卓版</a></p>
+    
+    <p>3. <a href="./计算机网络/libevent的学习/笔记/源码编译/在windows下编译win版的libevent.md">【本地链接】libevent源码编译-win版</a></p>
+    
+    <p>4.  libevent双向队列替换二叉堆原理</p>
+    
+    <h3>网络学习</h3>
+    
+    <p>1. <a href="./计算机网络/网络基础-网络模型.md">【本地链接】网络模型对各层数据包大小的限制</a></p>
+    
+    <p>2. wireshark分析抓包文件为什么会出现[TCP WINDOWS ZERO]</p>
+    
+    <p>3. <a href="https://bbs.csdn.net/topics/310178161">【网络链接】调用socket分段发送大文件的方法</a> 已经学习,融合部分到file-server项目中了</p>
+    
+    <h3>杂项</h3>
+       
+    <p>1. <a href="./C&C++Basicknowledge/C++语法专题/C++自身语法/【C++】【智能指针】的使用.md">【本地链接】学习C++智能指针</a></p>
+    
+    <p>2. <a href="./C&C++Basicknowledge/C++语法专题/其他语法/stl迭代器失效问题.md">【本地链接】迭代器失效问题</a></p>
+    
+    <p>3. <a href="./C&C++Basicknowledge/C++语法专题/其他语法/可变宏参数调试.md">【本地链接】可变宏参数的笔记整理</a></p>
+    
+    <p>4. COPYPIG无法获取笔记本自带键盘的事件文件</p>
+    
+    <p>5. <a href="./Linux/linux-shell脚本/shell脚本积累/dos2unix.sh">【本地链接】dos2unix.sh脚本兼容windows和linux的修改</a></p>
+    
+    <p>6. <a href="./C&C++Basicknowledge/C++语法专题/其他语法/字符串数组和普通数组.md">【本地链接】输出字符串数组内容,最后总会出现多余字符</a></p>
+    
+    <p>7. <a href="./C&C++Basicknowledge/C++语法专题/其他语法/结构体中存在不定长数组成员.md">【本地链接】C语言中不定长结构体的使用柔性数组</a></p>
+    
+    <p>8. C++ md5sum文件校验</p>
+    
+    <p>9. <a href="./Linux/linux开发经验/使用LINUX系统调用获取文件树目录并转换成json文件/mytreetojson.cpp">【本地链接】C++ 目录树的获取</a></p>
+    
+    <p>10. C++语言设计与演化之异常机制</p>
+    
+    <p>11. 重新温习C++单例模式--整理代码和笔记【DONE】</p>
+    
+ 
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>控件背景图片</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<a href="https://blog.csdn.net/china_jeffery/article/details/106668835">【网络链接】Qt QSS的几种图片显示方式</a>
+
+<h1>设置图片属性介绍</h1>
+
+<p>目前可以设置图片的属性有 image,border-image,background-image</p>
+
+<xmp>
+     SVG介绍
+       
+     SVG是一种图像文件格式,它的英文全称为Scalable Vector Graphics,意思为可缩放的矢量图形。
+     它是基于XML(Extensible Markup Language),由World Wide Web Consortium(W3C)联盟进行开发的。
+     严格来说应该是一种开放标准的矢量图形语言,可让你设计激动人心的、高分辨率的Web图形页面。
+     用户可以直接用代码来描绘图像,可以用任何文字处理工具打开SVG图像,通过改变部分代码来使图像具有交互功能,并可以随时插入到HTML中通过浏览器来观看。
+</xmp>
+
+<h2>background-image</h2>
+
+<p>background-image按图片实际尺寸显示图片,超过控件显示区域的部分会被裁剪掉,虽能显示SVG,但无法对SVG进行无损缩放;</p>
+
+<p>关于background-image的几个附属属性的作用,可以一句话概括为 : 从background-origin区域的background-position位置开始绘制图像,并以background-repeat方式进行重复;最后将图像background-clip区域以外的范围裁剪掉(即不显示)。</p>
+
+<p>关于background-image的附属属性可以参考<a href="https://www.w3school.com.cn/cssref/pr_background-position.asp">【网络链接】CSS background-position属性</a></p>
+
+
+<h2>image</h2>
+
+<p>按图片原长宽比来缩放图片,保证填充满控件content区域,支持SVG矢量图显示和无损缩放;</p>
+
+<p>image可以使用image-position来指定图片开始显示的位置(参考上面background-position)。</p>
+
+<h2>border-image</h2>
+
+<p>按控件border区域的长宽比来缩放图片,保证填充满控件border区域,支持SVG矢量图显示和无损缩放;</p>
+
+<h2>属性优先级</h2>
+
+<p>如果在一个控件中同时指定background-image,border-image,image这三个属性,会按照如下的顺序进行绘制：先绘制background-image然后 border-image最后image</p>
+
+
+</body>
+</html>
+
+    

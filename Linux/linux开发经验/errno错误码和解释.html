@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>errno错误码和解释</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p><b>errno</b>整型变量被普遍应用于LINUX的异常处理中,其记录了最近一次的错误码。</p>
+
+<p>通过判断错误码的值,以此执行不同的错误处理,这是C语言典型的异常处理方式。其错误名称,比如<b>EAGAIN</b>、<b>EWOULDBLOCK</b>等,都通过宏定义,头文件是<b>errno.h</b>;错误码对应的描述,可以通过<b>strerror</b>输出。</p>
+
+<p>如果想知道错误名称对应的错误码的值,使用<b>print("%d",EAGAIN)</b>;</p>
+ 
+<p>如果想知道错误码的描述,调用<b>strerror</b>即可。但毕竟要写程序,相对不方便,那有没有现成的工具帮我们做到这些呢？</p>
+
+<p>Linux有一款<b>errno</b>命令行程序可以很方便的解决以上的问题,而且还能提供更丰富的功能。</p>
+
+<br>
+<br>
+<br>
+
+<pre>
+    apt-get install moreutils #安装,这个软件包里包含很多的命令程序,有时间可以挖掘一下。
+
+
+    
+
+    #通过错误名称查错误码和错误描述
+    $ errno EWOULDBLOCK
+    EWOULDBLOCK 11 Resource temporarily unavailable
+
+    #通过错误码查错误名称和错误描述
+    $ errno 11
+    EAGAIN 11 Resource temporarily unavailable
+
+    #列举所有errno变量所有错误情况
+</pre>
+
+</body>
+</html>

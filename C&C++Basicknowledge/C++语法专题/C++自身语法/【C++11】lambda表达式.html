@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>【C++11】lambda表达式</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>C++11中的Lambda表达式用于定义并创建匿名的函数对象,以简化编程工作。Lambda的语法形式如下:</p>
+
+<xmp>
+    [捕获列表] (参数列表) mutable声明 -> 返回值类型 {函数体}
+</xmp>
+
+<h2>[捕获列表]</h2>
+    
+<p>标识一个Lambda表达式的开始,<b>这部分必须存在,不能省略。</b>这个语法标志的作用是引用lambda表达式之外的变量。 </p>
+
+<table border="1px">
+    <tr> <td>参数</td> <td>含义</td> </tr>
+    <tr> <td>空</td> <td>没有任何函数对象参数</td> </tr>
+    <tr> <td>=</td> <td>函数体内可以使用Lambda所在范围内所有可见的局部变量(包括Lambda所在类的this),并且是值传递方式</td> </tr>
+    <tr> <td>&</td> <td>函数体内可以使用Lambda所在范围内所有可见的局部变量(包括Lambda所在类的this),并且是引用传递方式</td> </tr>
+    <tr> <td>this</td> <td>函数体内可以使用Lambda所在类中的成员变量</td> </tr>
+    <tr> <td>a</td> <td>将a按值进行传递。按值进行传递时,函数体内不能修改传递进来的a的拷贝,因为默认情况下函数是const的,要修改传递进来的拷贝,可以添加mutable修饰符</td> </tr>
+    <tr> <td>&a</td> <td>将a按引用进行传递</td> </tr>
+    <tr> <td>a,&b</td> <td>将a按值传递,b按引用进行传递</td> </tr>
+    <tr> <td>=,&a,&b</td> <td>除a和b按引用进行传递外,其他参数都按值进行传递</td> </tr>
+    <tr> <td>&,a,b</td> <td>除a和b按值进行传递外,其他参数都按引用进行传递</td> </tr>
+ </table>
+
+
+<p><b>要注意捕获列表引用变量的生命周期和作用域</b></p>
+<pre>
+    1 自动存储期: 只有自动存储期的变量(即局部变量)才能被捕获。如果一个变量有静态存储期(例如全局变量或静态局部变量),或者它是在函数外部定义的,那么你不能捕获它。
+    2 引用: 当使用引用捕获时(例如 [&a]),不论 a 的存储期如何,都可以被捕获。
+    3 生命周期: 即使你可以捕获一个变量,其生命周期可能仍然是一个问题。捕获的变量在 lambda 表达式的作用域内应该存在,否则可能会导致未定义的行为。
+
+</pre>
+
+<xmp>
+    #include <iostream>
+    using namespace std;
+    
+    int a = 0;
+    int b = 1;
+    
+    auto sum4 = [&a,&b] { //捕获列表引用方式引入全局变量 warning: capture of variable 'a' 'b' with non-automatic storage duration 【TODO出现了警告,需要验证这么做是否安全】
+            a = 40;       //修改全局变量的值
+            b = 41;
+    };
+
+    //auto sum5 = [a,b] {}; 捕获列表值传递方式引入 全局变量报错
+    
+    class A{
+        private:
+            int _a1;
+
+        public:
+            A(){
+                    _a  = 0;
+                    _a1 = 0;
+            }
+            int _a;
+    
+            void fun(){
+                auto _fun = [this] { //捕获列表引入this指针  修改类成员变量的值
+                    this->_a = 100;
+                    this->_a1 = 101;
+                };
+
+                _fun();
+                cout << "_a = " << this->_a << " _a1 = " << this->_a1 << endl;
+    
+                // auto _fun2 = []{ //没有引入this指针则不能使用内部的成员变量  报错
+                //     cout << "_a = " << this->_a << endl;
+                //     cout << "_a = " << _a1 << endl;
+                // };
+    
+                // auto _fun3 = [this->_a1,this->_a1]{  //单独的引入成员变量也不行 报错
+                //     cout << "_a = " << this->_a << endl;
+                //     cout << "_a = " << _a1 << endl;
+                // }
+            }
+    };
+    
+    int main(){
+        int c = 2;
+        int d = 3;
+    
+        auto sum = [c,d] {//捕获列表引入局部变量
+        }; 
+
+        A aa;
+        aa.fun();
+    
+        sum4();
+        cout << "a = " << a << " b = "  << b << endl;
+
+        //auto sum2 = [a,b] {};  捕获列表引入 全局变量报错
+        return 0;
+    }
+
+    /*
+        _a = 100 _a1 = 101  //修改 成员变量的值成功
+        a = 40 b = 41       //修改 全局变量的值成功
+     */
+
+</xmp>
+
+
+
+<h2>参数列表</h2>
+<p>没有参数时,这部分可以省略。参数可以通过按值(如:(a,b))和按引用(如:(&a, &b))两种方式进行传递。这个语法标志的作用相当于函数入参</p>
+
+
+<h2>mutable 声明</h2>
+<p>这部分可以省略。捕获列表按值传递引用变量时,加上mutable修饰符后,可以修改传递进来的拷贝(<b>注意只能修改拷贝,而不是外部变量本身</b>)。</p>
+
+<xmp>
+    #include <iostream>
+    using namespace std;
+    
+    int main(){
+        int a = 1;
+        int b = 2;
+
+        // auto sum = [a,b] {
+        //     a = 10;
+        //     b = 20;
+        // }; 
+
+        auto sum2 = [a,b] () mutable {
+            a = 10;
+            b = 20;
+        }; 
+
+        cout << "a = " << a <<" b = " << b << endl;
+        return 0;
+    }
+
+    /*
+        a = 1 b = 2  //没有修改变量本身
+     */
+</xmp>
+
+
+<h2>-> 返回值类型</h2>
+<p>标识函数返回值的类型,当返回值为void,或者函数体中只有一处return的地方(此时编译器可以自动推断出返回值类型)时,这部分可以省略</p>
+
+
+    
+<h2>函数体</h2> 
+<p>标识函数的实现,这部分不能省略,但函数体可以为空。</p>
+    
+</body>
+</html>
+
+
+

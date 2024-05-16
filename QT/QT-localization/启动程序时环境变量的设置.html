@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>启动程序时环境变量的设置</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<xmp>
+        //例子
+        
+        #!/bin/bash
+        export QTDIR=/opt/SuperBXS/qt5/
+        export PATH=/opt/SuperBXS/qt5/bin/:/opt/SuperBXS/:$PATH
+        export LD_LIBRARY_PATH=/opt/SuperBXS/qt5/lib/:/opt/SuperBXS/:$LD_LIBRARY_PATH
+        export QT_PLUGIN_PATH=/opt/SuperBXS/qt5/lib/plugins
+        export QT_QPA_PLATFORM_PLUGIN_PATH=/opt/SuperBXS/qt5/lib/plugins/platforms/
+        export QTWEBENGINE_DISABLE_SANDBOX=1
+        export QT5_IM_MODULE=fcitx
+
+        cd /opt/SuperBXS
+        /opt/SuperBXS/TDEruptionPlayer $1 &
+</xmp>
+ 
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>html结构范例</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+
+<p>常用的系统调用记录一下,不用反复从网上找了</p>
+
+<xmp>
+      第一个参数表示协议族,必须为AF_LOCAL;
+      
+      第二个参数表示类型,既可以是SOCK_STREAM,又可以是SOCK_DGRAM,当参数指定为SOCK_STREAM时,得到的结果称为流管道,它与一般管道的区别是流管道是全双工的,即两个描述符即可读又可写;
+      
+      第三个参数只能为0;
+      
+      第四个参数用于保存创建的套接字对;
+      
+      socketpair函数建立一对匿名的已连接的套接字,建立的两个套接字描述符会放在sv[0]和sv[1]中。既可以从sv[0]写入sv[1]读出,又可以从sv[1]读入sv[0]写出,如果没有写入就读出则会生阻塞。
+      
+      
+      int socketpair(int domain,int type,int protocol,int sv[])
+</xmp>
+
+<hr>
+
+<xmp>
+      fork函数说明 : 返回值说明,在父进程中,返回新创建子进程的进程ID,在子进程中,fork返回0。如果fork执行错误返回负数
+</xmp>
+      
+<hr>
+
+<xmp>
+      sig      指定要捕获的信号类型
+      _handler 处理函数的函数指针  
+
+      _sighandler signal (int sig , _sighandler _handler);
+</xmp>
+
+<hr>
+
+<xmp>
+      sigaction 比 signal更健壮
+
+      //sig       指定要捕获的信号类型
+      //act       指定新的信号处理方式 
+      //oact      输出先前的信号处理方式(也可以直接填写NULL)
+      int sigaction(int sig, const sigaction * act, struct sigaction * oact);
+
+      //sigaction 是一个结构体
+      struct sigaction
+      {
+            #if defined __USE_POSIX199309 || defined __USE_XOPEN_EXTENDED
+            union
+                  {
+                        __sighandler_t sa_handler; //这是一个函数指针 指定信号处理函数 
+                                                   //__sighandler_t -->  typedef void (*__sighandler_t) (int);
+
+                        void (*sa_sigaction) (int, siginfo_t *, void *); //用于处理信号的高级函数指针
+                  }
+            __sigaction_handler;
+            #else
+            __sighandler_t sa_handler;
+            #endif
+
+            __sigset_t sa_mask; //在进程原有的信号掩码的基础上增加信号掩码,指定哪些信号不能发送给本进程
+                                //sa_mask是信号集,可以指定一组信号
+                                //【注意！！！】 用于在信号函数处理时设置进行信号掩码 代码参见[sig_demo]
+
+            int sa_flags;       //用于设置程序收到信号时的行为
+
+            void (*sa_restorer) (void); //恢复函数指针,大多情况不需要设置【linux高性能服务器编程说已经过时了】
+      };
+
+
+      //sa_mask 类型是一个信号集结构体
+      #define _SIGSET_NWORDS (1024 / (8 * sizeof (unsigned long int)))
+      typedef struct
+      {
+            unsigned long int __val[_SIGSET_NWORDS];
+      } __sigset_t;
+
+   
+      //这 4 个函数返回值:若成功,返回 0,;若出错,返回 -1
+      int sigemptyset (sigset_t *__set)   //清空信号集  将信号集的全部信号位清 0
+      int sigfillset (sigset_t *__set)    //填满信号集  将信号集的全部信号位置 1
+      int sigaddset (sigset_t *__set, int __signo) //将 __signo信号添加到信号集中
+      int sigdelset (sigset_t *__set, int __signo) //将 从信号集中删除 __signo信号
+
+      //返回值:若真,返回 1;若假,返回 0
+      int sigismember (const sigset_t *__set, int __signo) //测试信号集中是否存在__signo信号
+
+
+
+      //===================================demo==========================================
+
+      #include<stdio.h>
+      #include<signal.h>
+      #include<stdlib.h>
+      
+      //输出指定的信号集
+      // void output(sigset_t set)
+      // {
+      // 	printf("set.val[0]=%x\n",set.__val[0]);
+      // }
+      
+      
+      bool flag = false;  //表示是否处理过信号函数
+      
+      //按位输出信号集
+      void printset(sigset_t *ped)
+      {
+            int i;
+            for (i = 0; i < 32; i++)  // sigset_t val[0] 的1-31位对应常用信号
+            {
+      
+                  if ((sigismember(ped, i) == 1))
+                  {
+                  putchar('1');
+                  }
+                  else
+                  {
+                  putchar('0');
+                  }
+            }
+            printf("\n");
+      }
+      
+      
+      void handler(int sig)
+      {
+            int i;
+            sigset_t sysset;
+            printf("\nin handler sig=%d\n",sig);
+            sigprocmask(SIG_SETMASK,NULL,&sysset);
+            printf("处理信号函数执行时查看信号掩码\n");
+            printset(&sysset);	
+            printf("信号函数执行完毕\n");		
+            flag = true;
+      }
+      
+      int main(int argc,char *argv[])
+      {
+      
+            printf("当前进程号为  [%d]\n",getpid());
+      
+            struct sigaction act;
+            sigset_t set,sysset,newset;//set用于设置进程信号掩码,newset用于设置sigaction sa_mask信号掩码
+                                          //sysset用于查看进行信号掩码
+            
+            sigemptyset(&set);
+            sigemptyset(&newset);
+            sigemptyset(&sysset);
+            sigaddset(&set,SIGUSR1);
+            sigaddset(&newset,SIGINT); //CTRL + C触发
+            
+            printf("查看默认的进程信号掩码\n");
+            sigprocmask(SIG_SETMASK,NULL,&sysset);
+            printset(&sysset);
+            sigemptyset(&sysset); //再次清空,后面还要用
+      
+            printf("查看set信号集 内容\n");
+            printset(&set);
+            
+            printf("查看newset信号集 内容\n");
+            printset(&newset);
+            
+            printf("设置当前进程信号掩码为set,并查看设置后的进程信号掩码内容\n");
+            sigprocmask(SIG_SETMASK,&set,NULL);
+            sigprocmask(SIG_SETMASK,NULL,&sysset);
+            printset(&sysset);
+            sigemptyset(&sysset); //再次清空,后面还要用
+      
+            printf("设置信号函数处理SIGALRM,并设置信号函数执行时信号掩码内容为newset\n");
+            act.sa_handler=handler;
+            act.sa_flags=0;
+            act.sa_mask=newset; //信号函数处理时进程会屏蔽 SIGINT 信号
+            sigaction(SIGINT,&act,NULL);
+      
+            while(1){
+                  printf("...\n");
+                  usleep(500*1000);
+                  if(flag){
+                  printf("处理信号函数执行完成后查看进程信号掩码\n");
+                  sigemptyset(&sysset);
+                  sigprocmask(SIG_SETMASK,NULL,&sysset);
+                  printset(&sysset);
+                  flag = false;
+                  }
+      
+            }
+      
+            return 0;
+      }
+      
+      
+      /* 运行结果以及分析
+      
+            当前进程号为  [376264]
+            查看默认的进程信号掩码
+            00000000000000000000000000000000
+            查看set信号集 内容
+            00000000001000000000000000000000  《= 增加信号 SIGUSR1 = 10  所以在数组index =10 置1
+            查看newset信号集 内容
+            00100000000000000000000000000000  《= sa_mask 增加信号 SIGINT = 2  所以在数组index =2 置1
+            设置当前进程信号掩码为set,并查看设置后的进程信号掩码内容
+            00000000001000000000000000000000
+            设置信号函数处理SIGALRM,并设置信号函数执行时信号掩码内容为newset
+            ...
+            ...
+            ...
+            ...
+            ^C   《= 触发 SIGINT
+            in handler sig=2
+            处理信号函数执行时查看信号掩码
+            00100000001000000000000000000000  《= 信号函数执行时信号掩码同时有 SIGUSR1 SIGINT
+            信号函数执行完毕
+            处理信号函数执行完成后查看进程信号掩码
+            00000000001000000000000000000000  《= 信号函数执行完毕信号掩码只有 SIGUSR1 
+            ...
+            ...
+            ...
+            ...
+            ...
+            ^Z   《= 退出
+      */
+</xmp>
+
+<hr>
+
+<xmp>
+      ===========================IO复用相关函数==============================
+
+
+
+
+      int select(int nfds,        //等待的文件描述符的最大值+1
+                 fd_set *readfds, //等待读事件的文件描述符集合
+                 fd_set *writefds,//等待写事件的文件描述符集合
+                 fd_set *exceptfds, //等待异常事件的文件描述符集合
+                 struct timeval *timeout); //超时设置
+
+      /*
+      select的缺点: 1. 开销大调用select,需要把fd_set集合从用户态拷贝到内核态,需要在内核遍历传递进来的所有fdset,这个开销在fdset很多时很大
+                  2. 支持数量少select支持的文件描述符数量太小了,默认是1024(由fd_set决定)
+                  3. 文件描述符集合不能重用,因为内核每次检测到事件都会修改,所以每次监听都需要重置
+                  4. 每次select返回后,只能知道有几个fd发生了事件,但是具体哪几个还需要遍历文件描述符集合进一步判断。
+            
+
+              优点:
+                  1.跨平台
+            
+      */
+
+
+
+
+
+
+
+
+      struct pollfd {
+            int fd;        // 文件描述符
+            short events;  // 监听的事件集合
+            short revents; // 返回的事件集合
+      };
+
+      int poll(struct pollfd *fds, //fds是一个poll函数监听的结构列表.包含了三部分内容:文件描述符, 监听的事件集合, 返回的事件集合.
+               nfds_t nfds,        //nfds表示fds数组的长度.
+               int timeout);
+      
+      /*
+         相比select的优点:
+          1. 可以等待的文件描述符没有上限。
+          2. pollfd结构包含了要监视的event和就绪的revents,输入输出变量不是一个,在调用poll前不需要再重新设定。
+
+         缺点:
+          1. 用户和kernel需要遍历数组轮询数组上所有的epollfd
+          2. 每次调用poll,pollfd结构数据都要在用户空间和内核之间传递
+       */
+
+
+
+
+
+
+
+       //创建一个epoll标识符号  size无效
+       int epoll_create(int size);
+  
+       //注册要监听fd的事件类型
+       int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event); 
+  
+       //收集在epoll监控的事件中已经发送的事件
+       int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+  
+       /* epoll的优点:
+                       1. 文件描述符数目没有上限
+  
+                       2. 数据拷贝轻量,只在合适的时候调用 EPOLL_CTL_ADD 将对应结构体数据拷贝到内核中,不需要每次都向内核中拷贝结构体数据。
+  
+                       3. 事件回调机制,使用回调函数的方式, 将就绪的文件描述符结构加入到就绪队列中, 
+                          epoll_wait 返回直接访问就绪队列就知道哪些文件描述符就绪. 这个操作时间复杂度O(1). 即使文件描述符数目很多, 效率也不会受到影响.
+                 
+                 缺点:
+                       1. 频繁的触发就绪事件,会导致回调被频繁触发,降低效率
+       */
+</xmp>
+   
+<hr>
+
+<xmp>
+      /*
+      入参:
+            pid:
+                  从参数的名字上可以看出来这是一个进程的ID。但是这里pid的值不同时,会有不同的意义。
+                  1.pid > 0时,只等待进程ID等于pid的子进程,只要该子进程不结束,就会一直等待下去;
+                  2.pid = -1时,等待任何一个子进程的退出,此时作用和wait相同;
+                  3.pid = 0时,等待同一个进程组中的任何子进程;
+                  4.pid < -1时,等待一个指定进程组中的任何子进程,这个进程组的ID等于pid的绝对值。
+
+            status:
+                  子进程的结束状态返回后存于status
+
+            options:
+                  options提供了一些额外的选项来控制waitpid,例如WNOHANG和WUNTRACED这两个选项,这是两个常数,可以使用 “|”来链接起来使用,
+                  如果不想使用这两个选项,可以设置为0,如果选择使用了WNOHANG参数调用waitpid,即使没有子进程退出,它也会立刻返回,而不像wait那样永远等待。
+
+      返回值:
+            waitpid的返回值一共有三种情况:
+            1.当返回正常时,waitpid返回收集到的子进程的进程ID;
+            2.如果设置了WNOHANG,而调用中waitpid发现自己没有已退出的子进程可收集,则返回0;
+            3.如果在调用中出现错误,则返回-1,同时errno会被设置成相应的值来提示错误。
+      */
+
+      pid_t waitpid(pid_t pid,int * status,int options);
+</xmp>
+      
+ 
+</body>
+</html>

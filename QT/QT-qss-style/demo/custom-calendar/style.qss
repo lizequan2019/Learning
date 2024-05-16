@@ -1,0 +1,168 @@
+/************************日历样式*************************
+说明: 此日历控件由三部分组成包括  原生日历控件  时间选择框   按钮
+      当你看到属性后面由 CHANGE 字样时表面此属性的值需要根据皮肤来改变
+
+********************************************************/
+
+#mainwindow #dlgcalendarradiobox /*日历控件整体  mainwindow是它的父窗体控件*/
+{
+    background-color:#040F61;  /*CHANGE*/
+    border: 1px solid #0082D5; /*CHANGE*/
+    max-width: 243px;
+    min-width: 243px;
+    max-height: 274px;
+    min-height: 274px;
+}
+
+#dlgcalendarradiobox QTableView  /*原生日历控件的表格设置,主要针对每个日期格的设置*/
+{
+    color:#FFFFFF;                       /* 日期文字颜色          CHANGE */
+    selection-background-color: #73C0FE; /* 星期几 周几 的文字颜色 CHANGE */ 
+    alternate-background-color: #040F61; /* 星期几 周几 的背景颜色 CHANGE*/
+    background-color: #040F61;           /* 日期背景颜色          CHANGE */
+
+    border: 1px solid #0082D5;           /*CHANGE*/
+
+    max-width: 233px;
+    min-width: 233px;
+    max-height: 175px;
+    min-height: 175px;
+} 
+
+
+/*日历控件顶部的水平标题控件*/
+#qt_calendar_navigationbar 
+{ 
+    background-color: #0078D7;  /*CHANGE*/
+    max-height: 30px;
+    min-height: 30px;
+}
+
+
+/*月选择框 选择月份的按钮和下滑出的菜单  在日历的标题栏上*/
+#qt_calendar_monthbutton QMenu
+{
+    color: #FFFFFF;
+    font: 12px "Microsoft YaHei";
+    background-color: #040F61;          /*菜单背景颜色 CHANGE*/
+    selection-background-color: #0B539F;/*菜单选项被覆盖时的颜色 CHANGE*/
+}
+
+/*月选择框 文字颜色*/
+#qt_calendar_monthbutton 
+{
+    color: #FFFFFF;
+}
+
+/*年编辑框 在日历的标题栏上*/
+#qt_calendar_yearedit
+{
+    background-color: #0078D7;          /*CHANGE*/
+    color: #FFFFFF;
+    font: 10px "Microsoft YaHei";
+    selection-background-color:#0B539F; /*CHANGE*/
+}
+
+/*年份显示框 文字颜色*/
+#qt_calendar_yearbutton 
+{
+    color: #FFFFFF;
+}
+
+
+/*日历控件中的按钮 确定 取消按钮*/
+#dlgcalendarradiobox QPushButton
+{
+    background-color: #040F61;  /*CHANGE*/
+    color:#FFFFFF;
+    border:1px solid #025A9E;   /*CHANGE*/ 
+    border-radius:4px;
+    max-width: 58px;
+    min-width: 58px;
+    max-height: 20px;
+    min-height: 20px;
+}
+
+#dlgcalendarradiobox QPushButton:checked
+{
+    background-color:#d3d8e2; /*CHANGE*/
+}
+
+#dlgcalendarradiobox QPushButton:hover
+{
+    background-color:#d3d8e2; /*CHANGE*/
+}
+
+
+/*按钮 : 向前一个月*/
+#qt_calendar_prevmonth
+{
+    qproperty-icon:url("./premonth.png"); /*CHANGE*/
+}
+
+/*按钮 : 向后一个月*/
+#qt_calendar_nextmonth
+{
+    qproperty-icon:url("./nextmonth.png"); /*CHANGE*/
+}
+
+/*按钮 : 年编辑框向上的箭头*/
+#qt_calendar_yearedit::up-arrow{
+    image: url("./preyear.png"); /*CHANGE*/
+}
+
+/*按钮 : 年编辑框向下的箭头*/
+#qt_calendar_yearedit::down-arrow{
+    image: url("./nextyear.png"); /*CHANGE*/
+}
+
+
+/*时分秒 时间选择框*/
+#dlgcalendarradiobox QTimeEdit
+{
+    max-height: 20px;
+    min-height: 20px;
+    border:1px solid #0082D5;   /*CHANGE*/
+    border-radius: 4px;
+    background-color: #040F61;  /*CHANGE*/
+    color:#FFFFFF;
+}
+
+/*时分秒 时间选择框 上箭头*/
+#dlgcalendarradiobox QTimeEdit::up-button
+{
+    background-color: transparent;
+    border:none;
+    image: url("./up.png"); /*CHANGE*/
+}
+
+/*时分秒 时间选择框上箭头 点击*/
+#dlgcalendarradiobox QTimeEdit::up-button:pressed
+{
+    background-color: transparent;
+    border:1px;
+    image: url("./up.png"); /*CHANGE*/
+}
+
+/*时分秒 时间选择框下箭头*/
+#dlgcalendarradiobox QTimeEdit::down-button
+{
+    background-color: transparent;
+    border:none;
+    image: url("./down.png"); /*CHANGE*/
+}
+
+/*时分秒 时间选择框下箭头 点击*/
+#dlgcalendarradiobox QTimeEdit::down-button:pressed
+{
+    background-color: transparent;
+    border:1px;
+    image: url("./down.png"); /*CHANGE*/
+}
+
+/***************************************************************************/
+
+#centralwidget
+{
+   background-color:black;
+}

@@ -1,0 +1,163 @@
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+</style>
+
+<h2>传参不要使用隐式转换</h2>
+
+<p>无法保证隐式转换的操作和std::thread构造函数的拷贝操作的顺序,有可能std::thread的构造函数拷贝的是转换前的变量(buffer指针)。解决方案就是在传递到std::thread构造函数之前,就将字面值转化为std::string</p>
+
+<pre>
+        void f(int i,std::string const& s);
+
+        void not_oops(int some_param){
+
+            char buffer[1024];
+            sprintf(buffer,"%i",some_param);
+
+            //std::thread t(f,3,buffer); 隐式转换不得行啊
+
+            std::thread t(f,3,std::string(buffer));  //使用显式转换
+            
+            t.detach();
+        }
+</pre>
+
+
+<h2>注意线程使用的局部变量的生命周期</h2>
+
+<p>如下代码,在线程函数运行的过程中,局部变量some_local_state的生命周期比线程函数本身短,不同类型的传值会有不同的结果。值传递是相当于拷贝一份数组到线程中,所以运行结果正常。而引用和指针传参则未必会正常运行(数值可能不对)。</p>
+
+<details>
+    <summary> <font color="#ff0000">示例代码</font> </summary>
+    <pre>
+    <xmp>
+            #include <iostream>
+            #include <thread>
+            #include <unistd.h>
+    </xmp>
+
+            using namespace std;
+        
+            //向线程函数传参时用到的三种类型值
+            // #define one 0    //第一种传参方式 值传递
+            // #define two 0    //第二种传参方式 引用传递
+            #define three 0  //第三种传参方式 指针传递
+        
+        
+            //三种类型值对应的线程函数
+        
+            void threadfun1(int i){//值传递
+              for (unsigned j=0 ; j<5 ; ++j){
+                  printf("threadfun i = %d\n",i++);
+                  sleep(1);
+              } 
+              printf("线程执行完毕\n");
+            }
+        
+            void threadfun2(int & i){//引用传递
+              for (unsigned j=0 ; j<5 ; ++j){
+                  printf("threadfun2 i = %d\n",i++);
+                  sleep(1);
+              } 
+              printf("线程执行完毕\n");
+            }
+        
+            void threadfun3(int * i){//指针传递
+              for (unsigned j=0 ; j<5 ; ++j){
+                  printf("threadfun3 i = %d\n",(*i)++);
+                  sleep(1);
+              } 
+              printf("线程执行完毕\n");
+            }
+        
+            //在此函数中创建线程,并执行线程函数,这样的【目的】是为了让some_local_state的生命周期比线程短
+            void oops(){
+        
+        #ifdef one
+              int some_local_state=10;
+              std::thread my_thread(threadfun1,some_local_state);
+              my_thread.detach();
+        #endif
+        
+        #ifdef two
+              int some_local_state=10;
+              std::thread my_thread2(threadfun2,std::ref(some_local_state));
+              my_thread2.detach();   
+        #endif
+        
+        #ifdef three
+              int * some_local_state=new int(10);
+              std::thread my_thread3(threadfun3,some_local_state);
+              my_thread3.detach(); 
+              delete some_local_state;
+              some_local_state = nullptr;    
+        #endif
+            }                              
+        
+            int main(){
+                oops();
+        
+                while(1){
+                     sleep(1);
+                }
+                return 0;
+            }
+    </pre>
+</details>
+
+
+
+<h2>线程函数如何传参引用类型</h2>
+
+<p>普通的传递参数,程序都会将参数拷贝一份到新的线程中去,即使在线程函数声明的参数类型是<b>引用</b>也是无效的。关键的地方就是thread内部都会进行参数和函数的校验,会使用std::decay()函数处理参数,这个函数会去除参数的引用属性,导致函数匹配失败,直接报错。解决的方法就是使用`std::ref()`函数去包装要传递的参数,使之成为正真的引用。</p> 
+
+<pre>
+    void threadfun(mystr & _mystr)
+    {
+        std::cout << " m_i    = " << _mystr.m_i << endl;
+        std::cout << " m_str  = " << _mystr.m_str << endl;
+    }
+
+    int main()
+    {
+        mystr m;
+        m.m_i = 100;
+        m.m_str = string("hello world");
+
+        //不使用std::ref  无法编译通过 error: no type named 'type' in 'class std::result_of<void (*(MYSTR))(MYSTR&)>'|
+        thread t(threadfun,std::ref(m));   
+        t.join();
+        return 0;
+    }
+</pre>
+
+
+
+<h2>类的成员函数当作线程函数 </h2>
+
+<pre>
+    class myclass{
+        public:
+            myclass(){
+                cout << "myclass()" << endl;
+                m_x = 0;
+            }
+
+            void fun(){
+                cout << "m_x = " << m_x;
+            }
+
+            int m_x;
+    };
+
+    myclass _myclass;
+
+    // 参数一 函数地址  参数二 类的this指针,如果还有参数三,那么就是成员函数的形参 
+    thread t3(&myclass::fun,&_myclass);
+
+    
+</pre>
+
+

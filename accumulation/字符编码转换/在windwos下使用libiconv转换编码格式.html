@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>在windwos下使用libiconv转换编码格式</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>我在工作中常用的转换类型就是<b>Unicode</b>和<b>GBK、GB2312、GB18030</b>的转换。其他编码格式遇到再说。</p>
+
+<p>libiconv.lib是用自己编译libiconv-1.15版本源码生成的,当然下面的代码只是一个demo,仅仅是展示效果,代码中出现的文件需要读者自己准备。</p>
+
+<p>在测试的过程中,也要注意,有些古文中的汉字在GB2312字符集中是没有的,这可能导致转换失败,因为我喜欢用出师表来测试,无意中发现的,GBK和GB18030包含的汉字更全一些,也可以去网上查询,字符集中是否包含此汉字。</p>
+
+<details>
+    <summary> demo代码 </summary>
+
+<xmp>
+        #include <iostream>
+        #include <fstream>   
+        #include <string>  
+        #include <bitset> 
+        #include "iconv.h" //包函libiconv库头文件
+        
+        //导入libiconv库
+        #pragma comment(lib,"libiconv.lib")
+        
+        bool readfile(const std::string& _filepath, std::string& _filecontent)
+        {
+            bool res = false;
+            std::ifstream file(_filepath);
+        
+            if (!file.is_open()) { // 检查文件是否成功打开  
+                std::cerr << "无法打开文件" << _filepath << std::endl;
+            }
+            else {
+                std::string line;
+                while (std::getline(file, line)) { // 逐行读取文件内容  
+                    _filecontent += line;
+                }
+                res = true;
+            }
+            file.close(); // 关闭文件
+            return res;
+        }
+        
+        //字符串转换为二进制
+        void TransStringToBinary(const std::string & _str) {
+        
+            std::string temp = _str;
+        
+            for (int i = 0; i < temp.size(); ++i) {
+                std::bitset<8> binary(temp[i]);
+                std::cout << binary <<" ";
+            }
+            std::cout << std::endl;
+        }
+        
+        
+        //使用 libiconv 进行
+        int TransCore(const char * _pdesc, const char * _psrc, const char * _pstrin, size_t ilen, char * _pstrout, size_t * _polen)
+        {
+            const char ** ppin = &_pstrin;
+            char ** ppout = &_pstrout;
+        
+            iconv_t cd = iconv_open(_pdesc, _psrc);
+            if (cd == (iconv_t)-1){
+                return -1;
+            }
+            memset(_pstrout, 0, *_polen);
+        
+            int res = iconv(cd, ppin, &ilen, ppout, _polen);
+            std::cout << "iconv res = " << res << std::endl;
+        
+            iconv_close(cd);
+            return res;
+        }
+        
+        /*
+            desc 目标编码字符串
+            src  源编码字符串
+        
+            _strin 转换前内容
+            _strout 转换后内容
+        */       
+        bool TransEncodeFormat(const char* _desc, const char* _src, const std::string & _strin, std::string & _strout) {
+        
+            bool res = false;
+        
+            if (_desc == nullptr || _src == nullptr || _strin.empty()) {
+                std::cout << "入参不符合要求" << std::endl;
+                return res;
+            }
+        
+            size_t  inlen = _strin.length();
+        
+        #ifdef  LOG
+            std::cout << "需要转换的内容 : [" << _strin << "]" << std::endl;
+            std::cout << "需要转换的字节数 : [" << inlen << "]" << std::endl;
+        #endif
+        
+            size_t  outlen = inlen * 10;
+            char* tempout = new char[outlen];
+        
+            if (TransCore(_desc, _src, _strin.c_str(), inlen, tempout, &outlen) == 0 && tempout != nullptr) {
+                res = true;
+            }
+        
+        #ifdef  LOG
+            std::cout << "转换后的内容 : [" << tempout << "]" << std::endl;
+        #endif
+            
+            std::string temp(tempout);
+            _strout = tempout;
+        
+            delete[] tempout;
+            tempout = nullptr;
+        
+            return res;
+        }
+        
+        
+        int main(int argc, char* argv[])
+        {
+        
+            std::cout << "UTF8 ->  GBK  GB18030  GB2312" << std::endl;
+        
+            {//utf-8 转换到 GBK
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string utf8filepath = "./test-file/utf-8.txt";
+                readfile(utf8filepath, filecontent);
+        
+                //TransStringToBinary(filecontent);
+        
+                TransEncodeFormat("GBK", "UTF-8", filecontent, transcontent);
+                std::cout << "UTF-8["<<filecontent<<"] -> GBK[" << transcontent <<"]" << std::endl;
+            }
+        
+        
+            {//GBK 转换到 GB18030格式
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string utf8filepath = "./test-file/utf-8.txt";
+                readfile(utf8filepath, filecontent);
+        
+                //TransStringToBinary(filecontent);
+        
+                TransEncodeFormat("GB18030", "UTF-8", filecontent, transcontent);
+                std::cout << "UTF-8[" << filecontent << "] -> GB18030[" << transcontent << "]" << std::endl;
+            }
+        
+            {//GBK 转换到 GB2312格式
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string utf8filepath = "./test-file/utf-8.txt";
+                readfile(utf8filepath, filecontent);
+        
+                //TransStringToBinary(filecontent);
+        
+                TransEncodeFormat("GB2312", "UTF-8", filecontent, transcontent);
+                std::cout << "UTF-8[" << filecontent << "] -> GB2312[" << transcontent << "]" << std::endl;
+            }
+        
+           
+            std::cout << "\n\n\n" << std::endl;
+        
+            std::cout << "GBK  GB18030  GB2312 -> UTF-8" << std::endl;
+        
+            {//GBK 转换到 utf-8
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gbkfilepath = "./test-file/gbk.txt";
+                readfile(gbkfilepath, filecontent);
+        
+                TransEncodeFormat("UTF-8", "GBK", filecontent, transcontent);
+                std::cout << "GBK[" << filecontent << "] -> UTF-8[" << transcontent << "]" << std::endl;
+            }
+        
+        
+            {//GB2312 转换到utf-8
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gb2312filepath = "./test-file/gb2312.txt";
+                readfile(gb2312filepath, filecontent);
+        
+                TransEncodeFormat("UTF-8", "GB2312", filecontent, transcontent);
+                std::cout << "GB2312[" << filecontent << "] -> UTF-8[" << transcontent << "]" << std::endl;
+            }
+        
+        
+            {//GB18030 转换到utf-8
+                std::string filecontent;
+                std::string transcontent;
+        
+                std::string gb18030filepath = "./test-file/gb18030.txt";
+                readfile(gb18030filepath, filecontent);
+        
+                TransEncodeFormat("UTF-8", "GB18030", filecontent, transcontent);
+                std::cout << "GB18030[" << filecontent << "] -> UTF-8[" << transcontent << "]" << std::endl;
+            }
+        
+            return 0;
+        }
+</xmp>
+</details>
+
+<p><b>TransCore</b>函数是从网上抄的,自己又整理了一下,这个函数是核心,是关键。</p>
+
+<p>其实我自己也仿照人家写了一个,但是有问题,转换成功了,但是获取不到转换内容,我想这和指针方面有关系,以后还得研究研究【TDOO】</p>
+
+<details>
+    <summary> 自己仿写的代码(执行失败) </summary>
+
+<xmp>
+    int covertex(const char* desc, const char* src, const std::string& _strin, std::string& _strout)
+    {
+        std::cout << "======= covertex start =========" << std::endl;
+    
+        size_t  inlen  = _strin.length();
+        size_t  outlen = 255;
+    
+        const char* tempin = _strin.c_str();
+        const char** pin = &tempin;
+    
+        char* tempout = new char[outlen];
+        memset(tempout, '\0', outlen);
+        char** pout = &tempout;
+    
+        iconv_t cd = iconv_open(desc, src);
+        if (cd == (iconv_t)-1)
+        {
+            std::cout <<"iconv_open error" << std::endl;
+            return -1;
+        }
+    
+        int ret = iconv(cd, pin, &inlen, pout, &outlen);
+        std::cout << "iconv ret = " << ret << std::endl;
+    
+        std::cout << "tempout 地址 = " << &tempout << std::endl;
+        std::cout << "tempout  = " << tempout << std::endl;
+        std::cout << "*tempout  = " << *tempout << std::endl;
+        std::cout << "pout  = " << pout << std::endl;
+        std::cout << "*pout  = " << *pout << std::endl;
+        std::cout << "**pout  = " << **pout << std::endl;
+    
+        if (tempout != nullptr) {
+            //delete[] tempout;  一执行就崩溃了
+        }
+        else {
+            std::cout << "tempout == nullptr" << std::endl;
+        }
+    
+        iconv_close(cd);
+    
+        std::cout << "======= covertex end =========" << std::endl;
+        return 0;
+    }
+
+    /*
+        UTF8 ->  GBK  GB18030  GB2312
+        ======= covertex start =========
+        iconv ret = 0
+        tempout 地址 = 0079FDA4
+        tempout  =
+        *tempout  =
+        pout  = 0079FDA4
+        *pout  =
+        **pout  =
+        ======= covertex end =========
+        UTF-8[澶у濂斤紝"1234567890"  ABCDEFGHIJKLMNOPQRSTUVWXYZ|abcdefghijklmnopqrstuvwxyz ] -> GBK[]
+     */
+</xmp>
+</details>
+
+ 
+</body>
+</html>

@@ -1,0 +1,14 @@
+QPushButton[color='red']
+{
+    background-color: red;
+}
+
+QPushButton[color='green']
+{
+    background-color: green;
+}
+
+QPushButton
+{
+    background-color: gray;
+}

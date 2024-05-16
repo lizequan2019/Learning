@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>基本数据类型运算的自动转换</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<p>1. <b>若参与运算量的类型不同,则先转换成同一类型,</b>然后进行运算</p>
+
+<p>2. 转换按数据长度增加的方向进行,以保证精度不降低。如int型和long型运算时,先把int量转成long型后再进行运算</p>
+<pre>
+           <b>(a) 若两种类型的字节数不同,转换成字节数高的类型</b>     
+           <b>(b) 若两种类型的字节数相同,且一种有符号,一种无符号,则转换成无符号类型</b> 
+</pre>
+
+<p>3. 所有的浮点运算都是以双精度进行的,即使仅含float单精度量运算的表达式,也要先转换成double型,再作运算</p>
+   
+<p>4. char型和short型参与运算时,必须先转换成int型</p>
+ 
+<p>5. 在赋值运算中,赋值号两边量的数据类型不同时,赋值号右边量的类型将转换为左边量的类型。如果右边量的数据类型长度比左边长时,将丢失一部分数据,这样会降低精度</p>
+
+<xmp>
+    //示例代码
+    
+    #include <iostream>
+
+    using namespace std;
+
+    int main() {
+
+        int aa = -20;
+        unsigned int b = 4;
+
+        //int->unsigned int  结果大于6
+        (aa + b > 6) ? printf(">6") : printf(" < = 6");
+
+        return 0;
+    }
+
+    /*
+        输出 >6
+     */
+</xmp>
+      
+</body>
+</html>

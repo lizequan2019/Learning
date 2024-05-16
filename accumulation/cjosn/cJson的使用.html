@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>cJson的使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h2>CJSON.H文件的大致说明</h2>
+
+<xmp>
+        /*Supply malloc,realloc and free functions to cJSON*/
+        /*在c语言中内存的释放和申请一般是通过malloc和free完成的,为了方便让用户自由地管理内存,
+        cJOSN使用hook技术来让使用者自定义内存管理函数。
+        下面是具体实现方式,默认是使用系统的malloc和free函数,
+        使用cJSON_InitHooks 函数可以替换成用户自定义的 malloc 和 free 函数。*/
+        
+        //没看懂  这个函数没有成功调用
+        extern void cJSON_InitHooks(cJSON_Hooks * hooks);
+        
+        
+
+        //将字符串解析成一个cJson格式的变量  
+        extern cJSON *cJSON_Parse(const char *value);
+
+
+
+        //将一个cJson指针变量的内容输出为字符串   字符串有换行符和空格
+        extern char *cJSON_Print(cJSON *item);
+        
+        
+        /*将一个cJson指针变量的内容输出为字符串,但是字符串没有换行符和空格*/
+        extern char *cJSON_PrintUnformatted(cJSON *item);
+
+        
+        //   使用缓冲策略将cJSON实体呈现给文本。预缓冲是对最终大小的猜测。
+        //   猜测得好可以减少重新分配。fmt=0表示未格式化,=1表示格式化
+        extern char *cJSON_PrintBuffered(cJSON *item,int prebuffer,int fmt);
+
+
+        
+        /* 删除一个cJSON实体和所有子实体。*/
+        extern void cJSON_Delete(cJSON *c);
+        
+
+
+        /* 获取此根结点下组的个数 */
+        extern int    cJSON_GetArraySize(cJSON *array);
+        /* Retrieve item number "item" from array "array". Returns NULL if unsuccessful. */
+        extern cJSON *cJSON_GetArrayItem(cJSON *array,int item);
+        /* Get item "string" from object. Case insensitive. */
+        extern cJSON *cJSON_GetObjectItem(cJSON *object,const char *string);
+
+
+        
+        /*用于分析失败的解析。这将返回一个指向解析错误的指针。你可能需要向后看几个字符来理解它。当cJSON_Parse()返回0时定义。当cJSON_Parse()成功时为0。*/
+        extern const char *cJSON_GetErrorPtr(void);
+
+
+
+        
+        //########################################################################################################
+        /* 创建一个json数据,这里可以创建很多类型 */
+        //前面6个函数都被封装到了 cJSON_AddxxxToObject函数中
+        extern cJSON *cJSON_CreateNull(void);
+        extern cJSON *cJSON_CreateTrue(void);
+        extern cJSON *cJSON_CreateFalse(void);
+        extern cJSON *cJSON_CreateBool(int b);
+        extern cJSON *cJSON_CreateNumber(double num);
+        extern cJSON *cJSON_CreateString(const char *string);
+
+
+
+        
+        //这里是创建一个数组对象  下面是使用的例子
+        //cJSON * cjson_skill = cJSON_CreateArray();
+        //cJSON_AddItemToArray(cjson_skill, cJSON_CreateString("C"));
+        //cJSON_AddItemToArray(cjson_skill, cJSON_CreateString("Java"));
+        //cJSON_AddItemToArray(cjson_skill, cJSON_CreateString("Python"));
+        //这样得到的结果是
+        //  ["C", "Java", "Python"]  这就是单独的一个组,当前还没有添加到一个数据对象中
+        //这个很常用
+        extern cJSON *cJSON_CreateArray(void);
+
+
+
+        
+        //创建一个数据为空的对象,输出为{},可以添加数据,这个很常用
+        extern cJSON *cJSON_CreateObject(void);
+        
+        //########################################################################################################
+        
+
+
+        /* 用于创建不同类型的数组 int float double char ,第一个参数是数组名,第二个参数是数组元素的个数*/
+        //  int numbers[10] = { 1,2,3,4,5,6,7,8 };
+        //  cJSON * intarray = cJSON_CreateIntArray(numbers,10);
+        //  输出 [1, 2, 3, 4, 5, 6, 7, 8, 0, 0]   多余的元素会补零 
+        extern cJSON *cJSON_CreateIntArray(const int *numbers,int count);
+        extern cJSON *cJSON_CreateFloatArray(const float *numbers,int count);
+        extern cJSON *cJSON_CreateDoubleArray(const double *numbers,int count);
+        extern cJSON *cJSON_CreateStringArray(const char **strings,int count);
+        
+        //########################################################################################################
+        /* 将项追加到指定的数组/对象 */
+        
+        //向数组中添加项是不需要项起名字的
+        //[1, 2, 3, 4, 5, 6, 7, 8, 0, 0, {"lizequan":  "459"}]
+        extern void cJSON_AddItemToArray(cJSON *array, cJSON *item);
+
+
+        //项一个添加到一个对象中是需要对项重命名的
+        //cJSON * root = cJSON_CreateObject();
+        //cJSON_AddStringToObject(root, "lizequan", "459");
+        //cJSON * root2 = cJSON_CreateObject();
+        //cJSON_AddStringToObject(root2, "lizequan", "4009");
+        //cJSON_AddItemToObject(root, "1", root2);
+        //{
+        //        "lizequan":     "459",
+        //        "1":    {"lizequan":     "4009"}
+        //}
+        extern void cJSON_AddItemToObject(cJSON *object,const char *string,cJSON *item);
+        
+        /* 当字符串是常量的时候使用下面这个接口 不太明白这个使用*/
+        extern void cJSON_AddItemToObjectCS(cJSON *object,const char *string,cJSON *item); 
+        
+        /* 将对项的引用追加到指定的数组/对象中。当您想要将现有的cJSON添加到新的cJSON中,但又不想破坏现有的cJSON时,请使用此方法 */
+        //我感觉没什么变化
+        extern void cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item);
+        extern void cJSON_AddItemReferenceToObject(cJSON *object,const char *string,cJSON *item);
+        
+        //########################################################################################################
+        
+        /* 从数组或对象中删除或分离一个项 */
+        //从数组中分离一个项,函数会返回此项的一个cJSON 指针变量,int which是所选项所在的数组下标
+        extern cJSON *cJSON_DetachItemFromArray(cJSON *array,int which);
+
+
+        //直接删除
+        extern void   cJSON_DeleteItemFromArray(cJSON *array,int which);
+        
+        //从对象中分离一个项,函数会返回此项的一个cJSON 指针变量,注意此时返回的内容只有value,没有key
+        //	cJSON * root = cJSON_CreateObject();
+        //cJSON_AddStringToObject(root, "lizequan", "459");
+        //cJSON_AddStringToObject(root, "LIUWANG", "459");
+        //cJSON_AddStringToObject(root, "QUTIANWEN", "459");
+        //cJSON *	A = cJSON_DetachItemFromObject(root,"lizequan");
+        //cout << cJSON_Print(A) << endl;
+        //cout << cJSON_Print(root) << endl;
+        
+        //{
+        //        "lizequan":     "459",
+        //        "LIUWANG":      "459",
+        //        "QUTIANWEN":    "459"
+        //}
+        //"459"  <- 被分离的项的value
+        //{
+        //        "lizequan":     "459",
+        //        "LIUWANG":      "459"
+        //}
+        extern cJSON *cJSON_DetachItemFromObject(cJSON *object,const char *string);
+
+
+        //直接删除
+        extern void   cJSON_DeleteItemFromObject(cJSON *object,const char *string);
+        
+        //########################################################################################################
+          
+        /* 更新数组项 */
+        //向数组项中的指定位置插入一个项,此项占据当前位置,此位置原来的数据向后移动一个位置
+        extern void cJSON_InsertItemInArray(cJSON *array,int which,cJSON *newitem); 
+        //将数组项中的指定项替换成其他项
+        extern void cJSON_ReplaceItemInArray(cJSON *array,int which,cJSON *newitem);
+        
+        // 没有cJSON_InsertItemObject,因为Objects是无序的,查找依靠key值,直接在后面添加即可,不需要插入到某个位置
+        
+        // 替换指定key的项
+        extern void cJSON_ReplaceItemInObject(cJSON *object,const char *string,cJSON *newitem);
+        
+        //########################################################################################################
+        
+        // Duplicate a cJSON item   复制一个cJSON项
+        // int recurse 选项表示是否递归    1表示选择递归   0表示不选择递归
+        // 若选择递归则返回的 cJSON * 变量会赋值所有的结点信息
+        // 若不选择递归则返回的 cJSON * 变量只会复制cJSON *item变量的属性
+        extern cJSON * cJSON_Duplicate(cJSON *item,int recurse);
+        
+        // ParseWithOpts allows you to require (and check) that the JSON is null terminated, 
+        // and to retrieve the pointer to the final byte parsed. 
+        // ParseWithOpts允许您要求(并检查)JSON是否以null结尾,并检索到最终解析的字节的指针。 函数名翻译过来就是带有选项的解析
+        //没看懂
+        extern cJSON *cJSON_ParseWithOpts(const char *value,const char **return_parse_end,int require_null_terminated);
+        
+        
+        //此函数会将传入的字符串中的空格和换行都删除 ,使得字符串精简
+        extern void cJSON_Minify(char *json);
+        
+        //########################################################################################################
+        /* Macros for creating things quickly. */
+        //向对象中添加项的快速方式
+        #define cJSON_AddNullToObject(object,name)    cJSON_AddItemToObject(object, name, cJSON_CreateNull())
+        #define cJSON_AddTrueToObject(object,name)    cJSON_AddItemToObject(object, name, cJSON_CreateTrue())
+        #define cJSON_AddFalseToObject(object,name)   cJSON_AddItemToObject(object, name, cJSON_CreateFalse())
+        #define cJSON_AddBoolToObject(object,name,b)  cJSON_AddItemToObject(object, name, cJSON_CreateBool(b))
+        #define cJSON_AddNumberToObject(object,name,n)  cJSON_AddItemToObject(object, name, cJSON_CreateNumber(n))
+        #define cJSON_AddStringToObject(object,name,s)  cJSON_AddItemToObject(object, name, cJSON_CreateString(s))
+        
+        
+        //########################################################################################################
+        /* 当赋值一个整数的时候, 需要对浮点数也进行同时赋值. */
+        //没看懂
+        #define cJSON_SetIntValue(object,val)     ((object)?(object)->valueint=(object)->valuedouble=(val):(val))
+        #define cJSON_SetNumberValue(object,val)    ((object)?(object)->valueint=(object)->valuedouble=(val):(val))
+</xmp>
+
+<br>
+<br>
+<br>
+<br>
+        
+<h2>实际使用的技巧</h2> 
+        
+<h3>创建带有key值的数组</h3>
+<xmp>
+        //数组内的元素不需要名字,其他地方都需要有名称
+        #include <iostream>
+        #include <string>
+        #include "cJSON.h"
+        using namespace std;
+        
+        int main()
+        {
+                char *msg = NULL;
+                cJSON * root_json = cJSON_CreateObject();   //创建根数据对象
+                cJSON *jsonArray = cJSON_CreateArray();     //创建一个数组对象
+                for (int i = 0; i < 5; i++)
+                {
+                        cJSON * cell = cJSON_CreateObject();
+                        cJSON_AddStringToObject(cell, "Name", "lizequan");   
+                        cJSON_AddNumberToObject(cell, "Age", 18);
+                        cJSON_AddItemToArray(jsonArray, cell);     //将上面两行的对象添加到数组中
+                }
+                
+                cJSON_AddItemToObject(root_json, "key", jsonArray);  //将对象添加到根数据对象中,并起名为key
+
+                msg = cJSON_Print(root_json);
+
+                printf("生成的JSN0:\n%s\n", msg);
+
+                msg = cJSON_Print(jsonArray);
+
+                printf("生成的Array:\n%s\n", msg);
+
+                return 0;
+        }
+        
+        
+        /*
+        生成的JSON:
+        {
+                "key":  [{
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }]
+        }*/
+
+
+
+
+</xmp>
+        
+        
+
+<h3>向数组对象中添加没有key的value</h3>
+<xmp>
+        /*
+        {
+        "data":{
+                "元素1",
+                "元素2",
+                "元素3"
+               }
+        }
+        */
+        
+        //创建 一个数组对象
+        cJSON * DATA  = cJSON_CreateArray();                     
+        
+        //向数组对象中添加元素,注意这个元素必须要用函数再创建一下
+        cJSON_AddItemToArray(DATA,cJSON_CreateNumber(value));    
+        ```
+        
+        
+        ### 数组形式和对象形式
+        ```c
+        /*这也是正确的json串形式,且大部分情况下使用数组形式
+          原因在于使用数组形式可以获取数组中元素的个数并进行遍历,如果是使用对象的话,需要知道每一个对象的键名称是什么,如果变化频繁的话不是很好用
+        [
+            {
+               "caption":"1"
+            }, 
+            {
+                "caption":"2"
+            }, 
+            {
+                "caption":"3"
+            }, 
+            {
+                "caption":"4"
+            }, 
+            {
+                "caption":"5"
+            }
+        ]*/
+        
+        streamdata = cJSON_Parse(const char *value);
+        cJSON_GetObjectItem(cJSON_GetArrayItem(streamdata,0),"caption")->valuestring;  //获取了第零个元素,也就是1
+        
+        /*
+        这是将一个数组加入到key对象中
+        {
+                "key":  [{
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }, {
+                                "Name": "lizequan",
+                                "Age":  18
+                        }]
+        }*/
+
+
+        
+</xmp>
+
+        
+<br>
+<br>
+<br>
+<br>
+
+<h2>CJSON的内存管理</h2>
+
+<p>注意:cJSON_Delete(),cJSON_free()要区分使用,json格式的使用cJSON_Delete,指针格式使用cJSON_free,对应关系如下。但是在实际使用的过程中,我用的cjson库中没有cJSON_free函数,但是对于指针,我可以使用free函数去释放</p>
+
+<table border="1px">
+        <tr> <td>操作</td> <td></td> <td></td>  <td></td> </tr>
+        <tr> <td>申请内存</td> <td>cJSON_Parse</td> <td>cJSON_Create</td>  <td>cJSON_Print</td> </tr>
+        <tr> <td>操作</td> <td>cJSON_Delete</td> <td>cJSON_Delete</td>  <td>free</td> </tr>
+</table>
+     
+</body>
+</html>
+
+

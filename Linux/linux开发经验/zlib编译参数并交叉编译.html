@@ -1,0 +1,39 @@
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+</style>
+
+
+<p>本笔记用的zlib版本是1.2.11版本</p>
+
+<p>执行<b>./configure -h</b>文件,可以得到配置参数</p>
+
+<pre>
+        usage:
+
+        configure [--const] [--zprefix] [--prefix=PREFIX]  [--eprefix=EXPREFIX]
+                  [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]
+                  [--includedir=INCLUDEDIR] [--archs="-arch i386 -arch x86_64"]
+
+        
+        --prefix的作用是 : 编译的时候用来指定程序存放路径
+</pre>
+
+<p>下面是配置和编译脚本,编译环境是采用的clang</p>
+
+<pre>
+        #!/bin/bash
+
+        export PATH=/home/toolchains/clang_llvm_15.0-linux-gnu/bin:$PATH
+        export SYSROOT=/home/sysroot/x86_64-linux-gnu
+        export CC=clang
+        
+        #避免产生警告
+        export CFLAGS=-Wno-deprecated-non-prototype
+        ./configure --prefix=./output_x86
+
+        make 
+        make install
+        make test
+</pre>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>A4纸</title>
+    <style type="text/css">
+
+        /********************封面样式******************/
+        .pagecCover_title 
+        {
+            font-size: 45px;
+            text-align: center;
+            font-weight: 900;
+            padding-top: 500px;
+            font-family:"SimHei";
+        }
+        
+        .pagecCover_time 
+        {
+            text-align: center;
+            padding-top: 500px;
+            font-size: 18px;
+            color: rgba(0, 0, 0);
+            text-decoration:underline;
+        }
+        /**********************************************/
+        
+
+        /********************综述页面******************/
+        /* 盒子模型 外边距 */
+        .pageOverview_box {
+            margin: 80px 60px;
+        }
+
+        /* 标题 */
+        .pageOverview_title {
+            font-size: 18px;
+            font-weight: bold;
+            padding-top: 86px;
+            padding-bottom: 23px;
+        }
+
+        /**********************************************/
+
+
+        /******************检测详情页面****************/
+        /* 盒子模型 外边距 */
+        .pageDetail_box {
+            margin: 80px 60px;
+        }
+
+        /* 标题 */
+        .pageDetail_title {
+            font-size: 18px;
+            font-weight: bold;
+            padding-top: 86px;
+            padding-bottom: 23px;
+        }
+
+        /* 子标题 */
+        .pageDetail_subtitle {
+            font-size: 16px;
+            font-weight: 500;
+            padding-bottom: 23px;
+        }
+        /**********************************************/
+
+
+
+
+
+
+        /********本pdf中所有出现的表格的样式***********/
+        table {
+            border-collapse: collapse;
+            text-align: center;
+            vertical-align: middle;
+            margin-bottom: 100px;
+        }
+        
+        table tr {
+            height: 45px;
+            font-size: 15px;
+            color: rgb(133, 124, 124);
+            color: rgba(0, 0, 0, 0.7);
+            font-weight: 500;
+        }
+        
+        table tr td:first-child {
+            width: 200px;
+            background-color: rgb(232, 242, 226);
+        }
+        
+        table tr td:last-child {
+            width: 500px;
+            text-align: left;
+        }
+        
+        td div {
+            margin: 5px 0px;
+            line-height: 25px;
+        }
+        /**********************************************/
+
+        /*  纸张样式 ---  目前不用
+                .page {
+                    width: 21cm;
+                    min-height: 29.7cm;
+                    padding: 1cm;
+                    margin: 1cm auto;
+                    border: 1px #D3D3D3 solid;
+                    border-radius: 5px;
+                    background: white;
+                    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+                }
+                
+                .subpage {
+                    padding: 1cm;
+                    border: 5px red solid;
+                    height: 256mm;
+                    outline: 2cm #FFEAEA solid;
+                }
+                
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+        */
+    </style>
+
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+<!--主体内容-->
+
+<body>
+    <div>
+        
+        <!-- pdf封面 这个页面只有报表生成时间需要修改其余都是静态显示 -->
+        <div class="pagecCover">
+            <div>
+                <div class="pagecCover_title">
+                    平台健康检测报告
+                </div>
+                <div class="pagecCover_time">
+                    <span>报告生成时间 </span> <!--REPORTTIME REPLACE-->
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <!-- pdf 综述页面 其中第二列是需要动态修改的 特别是【检测规则组】一行中需要写入多个规则组 -->
+        <div class="pageOverview">
+            <!-- 标题以及表格样式 -->
+            <div class='pageOverview_box'>
+                <div class="pageOverview_title">1、综述信息</div>
+
+                <!--  下面是综述表格的模板  
+                <div class="pageOverview_table">
+                    <table border="1">
+                        <tr>
+                            <td>检测操作者</td>  <td>姓名</td>
+                        </tr>
+
+                        <tr>
+                            <td>目标机器ip</td>  <td>10.30.24.157</td>
+                        </tr>
+
+                        <tr>
+                            <td>开始检测时间</td> <td>2022-07-22</td>
+                        </tr>
+
+                        <tr>
+                            <td>检测耗时</td> <td>三分四秒</td>
+                        </tr>
+
+                        <tr>
+                            <td>检测规则组</td>
+                            <td>
+                                <div>1、xxxx规则组1</div>
+                                <div>2、xxxx规则组2</div>
+                                <div>3、xxxx规则组3</div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>执行错误</td> <td>1个</td>
+                        </tr>
+
+                        <tr>
+                            <td>致命报告</td> <td>1个</td>
+                        </tr>
+
+                        <tr>
+                            <td>严重警告</td> <td>1个</td>
+                        </tr>
+
+                        <tr>
+                            <td>轻微警告</td> <td>1个</td>
+                        </tr>
+
+                        <tr>
+                            <td>正确执行</td> <td>1个</td>
+                        </tr>
+                    </table>
+                </div>
+                 -->
+
+                <!--下面是替换标签-->
+                <!--PAGEOVERVIEW REPLACE-->
+
+            </div>
+        <div>
+
+            
+        <div class='pageDetail_box'>
+            <div class="pageDetail_title">2、检测详情</div>
+
+            <!-- 下面是一个规则组检测结果表格模板 
+            <div class="pageDetail_subtitle">2.1 XXX规则组</div>
+            <div class="pageDetail_table">
+                <table border="1">
+                    <tr>
+                        <td>规则名称</td> <td>XXX</td>
+                    </tr>
+
+                    <tr>
+                        <td>规则版本</td> <td>v10</td>
+                    </tr>
+                    <tr>
+                        <td>执行结果</td>
+                        <td>
+                            <div>检测规则组检测规则组检测规则组检测规则组检测规则组检测规则组检测规则组检测规则组检测规则组检测规则组</div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            -->
+
+            <!--下面是替换标签-->
+            <!--PAGEDETAIL REPLACE-->
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

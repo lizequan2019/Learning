@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>多线程类的使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<br>
+
+<br>
+
+<p>qt多线程内部不能处理ui,只能处理数据,可以使用信号将数据发送到主线程上。处理内部运算的称之为Worker线程,而带有界面操作的称之为GUI线程。在使用QTherad多线程的时候还需要注意启动多线程的方法(<b>下面会讲解</b>)以及<b>connect的第五个参数</b>的使用细节</p>
+
+<a href="https://blog.csdn.net/csdndenglu/article/details/121015117">【网络链接】QT多线程中槽函数如何执行分析</a><br>
+
+<a href="../../../../QT/QT-mechanism/qt_信号槽机制/connect/connect信号槽连接函数.html"> 【本地链接】connect信号槽连接函数</a>
+
+<p>下面列举两种使用方法</p>
+
+<h1>第一种方法(继承QThread并重载run)</h1>
+
+<p>第一种是自己的类必须继承于QThread并且要加这个Q_OBJECT,<b>这个类就是一个线程函数</b>,使用较为简单,调用多线程<b>start</b>方法开启线程即可,程序会自动执行<b>run</b>函数。</p>
+<xmp>
+            class WorkerThread : public QThread
+            {
+                Q_OBJECT
+                //必须在这个函数中写多线程做的事 然后使用start启动
+                void run() override;  
+                
+                signals:
+                void resultReady(const QString &s);
+            };
+            
+            //结束线程的函数
+            m_mythread->quit();
+            m_mythread->wait();
+</xmp>
+
+<p>这种起线程的方式导致QThread对象依附于主线程</p>
+
+<br>
+<br>
+
+<h1>第二种方法(继承QObject并使用moveToThread 推荐)</h1>
+
+<p>第二种是自定义的类要继承QObject类,且需要调用<b>moveToThread</b>函数将类移入到线程类中。需要<b>connect连接主线程信号和子线程槽函数</b>,最后需要调用线程类start方法启动线程</p>
+<xmp>
+            //下面是自定义类,不再需要重写run函数
+            class mythread : public QObject
+            {
+                    Q_OBJECT
+                public:
+                    mythread();      //构造函数不一定要有
+                public slots:
+                    void dowork();   //槽函数也是线程函数,需要主线程发送信号调用
+                signals:
+                    void done();     //线程执行完之后要发射的信号
+            };
+</xmp>
+
+<p>这种起线程的方式导致自定义对象依附于moveToThread的线程</p>
+
+<br>
+<br>
+
+<h1>例子</h1>
+<p>参考qt工程connect-thread,下面对工程执行结果进行解析</p>
+
+<p>一共展示四个日志,分别是继承QThread方法、对象移动到QThread线程方法与Qt::DirectConnection、Qt::QueuedConnection的组合</p>
+
+<br>
+<br>
+<br>
+<br>
+
+<pre>
+            //第一种 继承QThread方法  和  Qt::DirectConnection
+
+            "2024-04-09 10:41:04" ==========[Main Work Thread] on_pushButton_clicked do========== 0x4268 // 主线程ID
+
+            "2024-04-09 10:41:04" [Main Work Thread] MainThIdleTime  is  4 (s)
+            "2024-04-09 10:41:04" [Main Work Thread] ChildThIdleTime is  7 (s)
+            "2024-04-09 10:41:04" [Main Work Thread] use Qt::DirectConnection
+            "2024-04-09 10:41:04" [Main Work Thread] use INHERIT_TYPE
+
+            "2024-04-09 10:41:04" [InheritThread WorkThread] Init                0x4268 // 子线程构造函数在主线中执行
+            "2024-04-09 10:41:04" [InheritThread WorkThread ] run                0x5dbc // 子线程函数线程ID  由QThread创建
+
+            "2024-04-09 10:41:05" [InheritThread WorkThread] Sleep 1s            0x5dbc // 主子线程模拟任务执行,在各自的线程中执行
+            "2024-04-09 10:41:05" [Main Work Thread] Sleep 1s                    0x4268
+            "2024-04-09 10:41:06" [InheritThread WorkThread] Sleep 1s            0x5dbc
+            "2024-04-09 10:41:06" [Main Work Thread] Sleep 1s                    0x4268
+            "2024-04-09 10:41:07" [InheritThread WorkThread] Sleep 1s            0x5dbc
+            "2024-04-09 10:41:07" [Main Work Thread] Sleep 1s                    0x4268
+            "2024-04-09 10:41:08" [InheritThread WorkThread] Sleep 1s            0x5dbc
+            "2024-04-09 10:41:08" [Main Work Thread] Sleep 1s                    0x4268
+
+            "2024-04-09 10:41:08" ==========[Main Work Thread] on_pushButton_clicked done==========
+
+            "2024-04-09 10:41:09" [InheritThread WorkThread] Sleep 1s                      0x5dbc
+            "2024-04-09 10:41:10" [InheritThread WorkThread] Sleep 1s                      0x5dbc
+            "2024-04-09 10:41:11" [InheritThread WorkThread] Sleep 1s                      0x5dbc
+            "2024-04-09 10:41:11" [InheritThread WorkThread] EmitTimeout                   0x5dbc
+            "2024-04-09 10:41:11" [Main Work Thread] Deal InheritThread DealTimeout        0x5dbc // 主线程槽函数在子线程中执行,<font color="ff0000">由于是Qt::DirectConnection连接方式</font>,所以主线程的槽函数在子线程信号所在的线程中执行,也就是在子线程中执行
+</pre>
+
+<hr>
+
+<pre>
+
+
+
+            //第二种 对象移动到QThread线程方法  和  Qt::DirectConnection
+
+            "2024-04-09 11:01:46" ==========[Main Work Thread] on_pushButton_clicked do========== 0x43c8 //主线程ID
+
+            "2024-04-09 11:01:46" [Main Work Thread] MainThIdleTime  is  4 (s)
+            "2024-04-09 11:01:46" [Main Work Thread] ChildThIdleTime is  7 (s)
+            "2024-04-09 11:01:46" [Main Work Thread] use Qt::DirectConnection
+            "2024-04-09 11:01:46" [Main Work Thread] use MOVE_TYPE
+
+            "2024-04-09 11:01:46" [MoveToThread WorkThread] Init                     0x43c8 //MoveToThread对象在主线程中执行构造函数
+            "2024-04-09 11:01:46" [MoveToThread WorkThread] run                      0x43c8 //子线程函数的线程ID和主线程ID相同
+                                                                                            //<font color="ff0000">由于是主线程信号调用子线程槽函数,且连接方式是Qt::DirectConnection</font>,所以子线程槽函数在主线程信号所在的线程中执行,也就是在主线程中执行
+            "2024-04-09 11:01:47" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:48" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:49" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:50" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:51" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:52" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:53" [MoveToThread WorkThread] Sleep 1s                 0x43c8
+            "2024-04-09 11:01:53" [MoveToThread Work]  EmitTimeout                   0x43c8
+            "2024-04-09 11:01:53" [Main Work Thread] Deal MoveToThread DealTimeout]  0x43c8 //由于是Qt::DirectConnection连接方式,主线程槽函数在子线程信号所在的线程中执行,
+                                                                                            //因为子线程和主线程ID相同,所以主线程槽函数在主线程中执行
+            "2024-04-09 11:01:54" [Main Work Thread] Sleep 1s                        0x43c8
+            "2024-04-09 11:01:55" [Main Work Thread] Sleep 1s                        0x43c8
+            "2024-04-09 11:01:56" [Main Work Thread] Sleep 1s                        0x43c8
+            "2024-04-09 11:01:57" [Main Work Thread] Sleep 1s                        0x43c8
+            "2024-04-09 11:01:57" ==========[Main Work Thread] on_pushButton_clicked done==========
+</pre>
+
+<hr>
+
+<pre>
+
+
+
+            //第一种 继承QThread方法  和  Qt::QueuedConnection
+
+            "2024-04-09 11:15:27" ==========[Main Work Thread] on_pushButton_clicked do========== 0x54fc // 主线程ID
+
+            "2024-04-09 11:15:27" [Main Work Thread] MainThIdleTime  is  4 (s)
+            "2024-04-09 11:15:27" [Main Work Thread] ChildThIdleTime is  7 (s)
+            "2024-04-09 11:15:27" [Main Work Thread] use Qt::QueuedConnection
+            "2024-04-09 11:15:27" [Main Work Thread] use INHERIT_TYPE
+
+            "2024-04-09 11:15:27" [InheritThread WorkThread] Init                0x54fc // 子线程构造函数在主线中执行,所以函数所在主线程
+            "2024-04-09 11:15:27" [InheritThread WorkThread ] run                0x4d80 // 子线程ID 由QThread创建
+
+            "2024-04-09 11:15:28" [InheritThread WorkThread] Sleep 1s            0x4d80
+            "2024-04-09 11:15:28" [Main Work Thread] Sleep 1s                    0x54fc
+            "2024-04-09 11:15:29" [InheritThread WorkThread] Sleep 1s            0x4d80
+            "2024-04-09 11:15:29" [Main Work Thread] Sleep 1s                    0x54fc
+            "2024-04-09 11:15:30" [InheritThread WorkThread] Sleep 1s            0x4d80
+            "2024-04-09 11:15:30" [Main Work Thread] Sleep 1s                    0x54fc
+            "2024-04-09 11:15:31" [Main Work Thread] Sleep 1s                    0x54fc
+            "2024-04-09 11:15:31" [InheritThread WorkThread] Sleep 1s            0x4d80
+            "2024-04-09 11:15:31" ==========[Main Work Thread] on_pushButton_clicked done==========
+
+            "2024-04-09 11:15:32" [InheritThread WorkThread] Sleep 1s                      0x4d80
+            "2024-04-09 11:15:33" [InheritThread WorkThread] Sleep 1s                      0x4d80
+            "2024-04-09 11:15:34" [InheritThread WorkThread] Sleep 1s                      0x4d80
+            "2024-04-09 11:15:34" [InheritThread WorkThread] EmitTimeout                   0x4d80
+            "2024-04-09 11:15:34" [Main Work Thread] Deal InheritThread DealTimeout        0x54fc //主线程槽函数在主线程中执行,这是显然的,但是要清楚为什么
+                                                                                                  //因为Qt::QueuedConnection连接方式,槽函数运行于信号接收者所依附的线程
+                                                                                                  //信号接收者是MainWindow对象,此时需要了解MainWindow对象所依附的线程是谁
+                                                                                                  //MainWindow对象依附在主线程中(对象在主线中创建),所以对应的槽函数会在主线程中执行,而不是子线程。
+</pre>
+
+<hr>
+
+<pre>
+
+
+
+            //第二种 对象移动到QThread线程方法  和  Qt::QueuedConnection
+
+            "2024-04-09 11:39:37" ==========[Main Work Thread] on_pushButton_clicked do========== 0x33d0 // 主线程ID
+
+            "2024-04-09 11:39:37" [Main Work Thread] MainThIdleTime  is  4 (s)
+            "2024-04-09 11:39:37" [Main Work Thread] ChildThIdleTime is  7 (s)
+            "2024-04-09 11:39:37" [Main Work Thread] use Qt::QueuedConnection
+            "2024-04-09 11:39:37" [Main Work Thread] use MOVE_TYPE
+
+            "2024-04-09 11:39:37" [MoveToThread WorkThread] Init             0x33d0
+            "2024-04-09 11:39:37" [MoveToThread WorkThread] run              0x2098 // 子线程ID和主线程ID不同
+                                                                                    // 因为Qt::QueuedConnection连接方式,槽函数运行于信号接收者所依附的线程
+                                                                                    // 信号接收者是MoveToThread对象,MoveToThread被移入到m_pth2线程
+                                                                                    // 所以MoveToThread对象依附于m_pth2线程
+
+            "2024-04-09 11:39:38" [Main Work Thread] Sleep 1s                0x33d0
+            "2024-04-09 11:39:38" [MoveToThread WorkThread] Sleep 1s         0x2098
+            "2024-04-09 11:39:39" [Main Work Thread] Sleep 1s                0x33d0
+            "2024-04-09 11:39:39" [MoveToThread WorkThread] Sleep 1s         0x2098
+            "2024-04-09 11:39:40" [Main Work Thread] Sleep 1s                0x33d0
+            "2024-04-09 11:39:40" [MoveToThread WorkThread] Sleep 1s         0x2098
+            "2024-04-09 11:39:41" [Main Work Thread] Sleep 1s                0x33d0
+            "2024-04-09 11:39:41" ==========[Main Work Thread] on_pushButton_clicked done==========
+
+            "2024-04-09 11:39:41" [MoveToThread WorkThread] Sleep 1s                       0x2098
+            "2024-04-09 11:39:42" [MoveToThread WorkThread] Sleep 1s                       0x2098
+            "2024-04-09 11:39:43" [MoveToThread WorkThread] Sleep 1s                       0x2098
+            "2024-04-09 11:39:44" [MoveToThread WorkThread] Sleep 1s                       0x2098
+            "2024-04-09 11:39:44" [MoveToThread Work]  EmitTimeout                         0x2098
+            "2024-04-09 11:39:44" [Main Work Thread] Deal MoveToThread DealTimeout]        0x33d0
+</pre>
+ 
+</body>
+</html>
+

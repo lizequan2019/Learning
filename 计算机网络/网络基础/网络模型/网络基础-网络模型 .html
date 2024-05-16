@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>网络基础-网络模型</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h1>网络参考模型(OSI)</h1>
+
+    <table border="1px">
+
+    <tr> <td>层</td> <td>解释</td> <td>代表协议</td> <td>数据单元</td> <td>面向对象</td>  <td>对应的设备</td></tr>
+
+    <tr> <td>物理层</td> <td>规定物理标准,例如电压标准,接口标准</td> <td>ISO2110、IEEE802、IEEE802.2</td> <td>Bit(比特)</td> <td>面向数据传输</td> <td>集线器 相当于网线</td></tr>
+
+    <tr> <td>数据链路层</td> <td>规定网络设备如何封装数据帧</td> <td>SLIP、CSLIP、PPP、MTU、ARP、RARP</td> <td>Frame(帧)</td> <td>面向数据传输</td> <td>交换机 基于MAC转发</td></tr>
+
+    <tr> <td>网络层</td> <td>选择最佳网络路径</td> <td>IP、ICMP、OSPF、BGP、IGMP、ARP、RARP</td> <td>Packet(包)</td> <td>面向数据传输</td> <td>路由器 基于IP地址转发</td></tr>
+
+    <tr> <td>传输层</td> <td>建立主机端到端的连接</td> <td>TCP、UDP</td> <td>Segment(段)</td> <td>面向数据传输</td> </tr>
+
+    <tr> <td>会话层</td> <td>建立、维护和管理会话</td> <td>没有协议</td> <td>PDU(协议数据单元)</td>  <td>面向应用</td> </tr>
+
+    <tr> <td>表示层</td> <td>表示数据,数据是否需要加密,如何处理数据格式等</td> <td>没有协议</td> <td>PDU(协议数据单元)</td>  <td>面向应用</td> </tr>
+
+    <tr> <td>应用层</td> <td>提供应用程序间通信(文件传输、电子邮件、文件服务、虚拟终端)</td> <td>TFTP、HTTP、SNMP、FTP、SMTP、DNS、RIP、Telnet</td> <td>PDU(协议数据单元)</td> <td>面向应用</td> </tr>
+
+    </table>
+ 
+
+<p>每一层数据是由上一层数据+本层首部信息组成的,其中每一层的数据,称为本层的协议数据单元,即PDU。</p>
+    
+<p>数据链路层一帧数据量的范围在46-1500字节,该长度称为<b>最大传输单元</b>即<b>MTU</b>。<b>若数据长度不够46字节,则需要填充内容;若数据长度超过1500字节,则需要分片传输。</b></p>
+    
+<p>网络层,ip协议支持最大内容数据为<b>2^16-1 = 65535</b>,所以网络层的数据需要分片向数据链路层传递数据。如果不分片,ip数据头为20字节,所以数据内容最大为1480字节。</p>
+    
+<p>传输层,udp允许传输的最大长度理论上<b>2^16-20(ip数据头)-8(udp数据头) = 65507</b>, 但是实际上UDP数据报的数据区最大长度为1472字节。因为以太网(Ethernet)数据帧的长度必须在46-1500字节之间,这是由以太网的物理特性决定的。但这并不是指链路层的长度被限制在1500字节,其实这个MTU指的是链路层的数据区。并不包括链路层的首部和尾部的18个字节。所以,事实上,这个1500字节就是网络层IP数据报的长度限制。因为IP数据报的首部为20字节,所以IP数据报的数据区长度最大为1480字节。而这个1480字节就是用来放TCP传来的TCP报文段或UDP传来的UDP数据报的。又因为UDP数据报的首部8字节,所以UDP数据报的数据区最大长度为<b>1500-20(ip数据头)-8(udp数据头) = 1472</b>字节。</p>
+    
+<p>同理,tcp的最大传输数据为<b>1500-20(ip数据头)-20(tcp数据头) = 1460</b>字节。</p>
+    
+
+<br>
+<br>
+<br>
+
+
+<h1>TCP/IP模型(工业模型)</h1>
+
+    <table border="1px">
+    <tr> <td>TCP/IP模型</td> <td>对应的OSI</td> </tr>
+    <tr> <td>应用层</td> <td>应用层、表示层、会话层</td> </tr>
+    <tr> <td>传输层</td> <td>传输层</td> </tr>
+    <tr> <td>网络层</td> <td>网络层</td> </tr>
+    <tr> <td>网络接口层</td> <td>物理层 数据链路层</td> </tr>
+    </table>
+ 
+</body>
+</html>

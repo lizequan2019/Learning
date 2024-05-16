@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>程序界面无法拖拽到4K副屏问题</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>问题背景</h1>
+
+<p>1920x1080显示器作为主屏幕,4K显示器作为副屏幕且设置缩放为200%。将程序从主屏幕向副屏幕拖拽时,程序界面无法被拖拽。</p>
+
+<h2>研究过程</h2>
+    
+<p>第一步肯定是先复现一下问题,顺便抓个日志。问题是必现的,这就降低了排查问题的难度,得到以下日志(具体数值每次都略有不同)。</p>
+<xmp>
+    QWindowsWindow::setGeometry: Unable to set geometry 1005x618-509+162 (frame: 1005x618-509+162) on QWidgetWindow/"widget_EruptionPlayerWindow" 
+    on "\\.\DISPLAY1". Resulting geometry: 503x309-509+162 (frame: 503x309-509+162) margins: 0, 0, 0, 0 
+    minimum size: 1005x618 MINMAXINFO maxSize=0,0 maxpos=0,0 mintrack=1005,618 maxtrack=0,0)
+    
+    QWindowsWindow::setGeometry: Unable to set geometry 2010x1236-940+690 (frame: 2010x1236-940+690) on QWidgetWindow/"widget_EruptionPlayerWindow" 
+    on "\\.\DISPLAY2". Resulting geometry: 3840x2080+0+0 (frame: 3840x2080+0+0) margins: 0, 0, 0, 0 
+    minimum size: 1005x618 MINMAXINFO maxSize=0,0 maxpos=0,0 mintrack=2010,1236 maxtrack=0,0)
+
+
+</xmp>
+
+
+<p>第二步直接百度,从网上还是可以查到一些内容的。下面是我觉得比较有用的博客。</p>
+
+    
+    > https://blog.csdn.net/weixin_44104897/article/details/129289221  
+    >https://blog.csdn.net/weixin_50159400/article/details/120443291
+    
+    解决方法我也试了,没有用,但是这两篇文章中都提到了父子窗口尺寸不对导致的出现上述日志。所以我决定从父子窗口的方向来排查。
+    
+    
+    &emsp;&emsp;对应的工程代码不是很熟悉,所以第一次就把子窗口控件全删除了,果然这样不会出现上述问题,但是程序的功能也没有了。
+    
+    &emsp;&emsp;恢复代码,我想了想,如果和窗口尺寸有关系,那么一般都是属性设置,于是我将子界面构造函数中的代码都注释了,发现程序正常说明问题就在构造函数中。
+    
+    &emsp;&emsp;于是我再一行行解开注释,很快就找到了是哪行代码,这行代码的作用是设置界面的最小宽高,可能是设置的最小宽高有点大(程序界面在4K显示器上200%显示,宽高*2就大于父界面导致错误,**我的猜想**)
+    
+    &emsp;&emsp;我直接修改了设置的最小宽高,设置成了更小的值,发现这次程序界面可以正常的拖拽过去,也许我的猜想是正确的。
+    
+    &emsp;&emsp;下一步和同事商量抓个解决方法是否可行,但他们认为这种修改没有找到根本问题,只是修改表面。于是我们又去找有解决过类似问题的同事一起讨论,他提供了两行代码,说以前就是这么解决的。
+    
+    ```c++
+        //在main.cpp中 QApp.exec()执行前设置Qt的环境变量
+        qunsetenv("QT_SCALE_FACTOR");
+        qputenv("QT_ENABLE_HIGHDPI_SCALING", "1");
+    ```
+    
+    我也试了一下,也是没起作用,日志输出的内容没有变化。
+    
+    &emsp;&emsp;到目前阶段,没有思绪的了,于是我还沿着父子窗口尺寸有问题的方向研究,也许子窗口是没有问题的,那么是不是父窗口有问题,于是我又检查了一下父窗口的属性,发现了
+    
+    ```c++
+        setWindowFlags(windowFlags() & ~Qt::Dialog | Qt::Widget);
+    ```
+    
+    我怀疑是`Qt::Dialog`属性的问题,于是去除掉它,此时程序界面可以正常拖拽到4k副屏,只不过程序界面还带有了windows窗口的最大化和最小化按钮。
+    
+    &emsp;&emsp;2023-6-1,我又继续探索,发现程序的最外层界面是另一个类,而在这个类中存在着处理`resizeEvent`的逻辑,我于是在这个位置打日志验证。确实是有一些关系,程序在两个显示器之间切换出的问题, 于是继续看又发现了,原来程序界面类是继承了一个自定义的父类,于是我又去父类中去查看,这里面写的太乱了,一个事件过滤器函数中什么事件都处理,诶,连个注释都没有,只能自己边测边理解了。
+    
+    &emsp;&emsp;2023-6-2今天早上继续研究,和曾经开发过的同事讨论,知道了这个父类是还被其他窗口界面所用,这时候我发现,父类代码中居然有特别为此工程编写的分支,然后我就直接删除了,此时再测试,效果好了点,但是在4K显示器上最大化按钮进行最大化还是有问题,界面会自动移动到主屏的,这也是个问题。
+    
+    &emsp;&emsp;于是我继续看,这次肯定是看最大化操作逻辑代码,这次我就很敏锐的看到了获取界面所在显示器的代码有问题
+    
+    ```c++
+        QDesktopWidget* desk = QApplication::desktop();
+    ```
+    
+    我不使用这种方法,(1)这段代码可能是不能准确获取界面所在的显示器 (2)这个方法已经被弃用,所以我选择用新的方法
+    
+    
+    ```c++
+          QScreen * pscreen = this->screen();
+    ```
+    
+    
+    &emsp;&emsp;目前界面勉强可以实现1080p 100% 与 4k 200%之间的移动,但还是有一些小问题。
+    
+    
+    
+    ## 总结
+    
+    (1) 如果在代码设计之初就能想到扩展4k副屏的需求,那就最好了,但是很少有人能想到
+    (2) 代码实现的不好,什么events函数都有,都要自己实现,还没实现好,这样还影响排查
+    (3) 使用方法要用新的,过时的尽快更新
+    (4) 多屏幕显示,要注意分辨率和缩放率的不同
+    
+    ```c++
+    
+    //使用鼠标跨显示器移动界面
+    
+    void CLS_DlgLogin::mousePressEvent(QMouseEvent *event)
+    { //鼠标按键被按下
+        if(event->button()==Qt::LeftButton) //如果鼠标左键按下
+        {
+            m_blIsPressed = true;
+            m_qposCur = event->pos();    //记录当前的点击坐标
+        }
+    }
+    
+    void CLS_DlgLogin::mouseMoveEvent(QMouseEvent *event)
+    {   //鼠标按下左键移动
+        if(m_blIsPressed) //如果鼠标左键按下
+        {
+            this->move(event->pos() - m_qposCur + this->pos());    //窗口移动
+        }
+    }
+    
+    void CLS_DlgLogin::mouseReleaseEvent(QMouseEvent *event)
+    {
+        //鼠标按键释放
+        Q_UNUSED(event);
+        m_blIsPressed=false; //停止移动
+    }
+    
+    
+    
+    /** 功能: m_qposCur - 当前鼠标坐标 **/
+    QPoint m_qposCur;
+    bool    m_blIsPressed=false;//表示窗口是否按下鼠标左键
+        
+    ```
+    
+ 
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

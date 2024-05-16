@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>问题说明和验证</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+
+<p><a href="https://github.com/gabime/spdlog/issues/3057">【网络链接】issue</a></p>   
+
+<p>这个问题比较简单,总结下来就是(1)设置自定义格式后,info debug字样没有颜色了 (2)自定义格式怎么设置数字输出格式</p>
+<p>问题(1)看<b>spdlog wiki</b>那篇关于自定义格式的就好,问题(2)是需要参照fmt库的输出格式</p>
+
+<xmp>
+        #include <iostream>
+        #include "spdlog/spdlog.h"
+        #include "spdlog/sinks/stdout_color_sinks.h"
+
+        int main() 
+        {
+            spdlog::sink_ptr sink1 = std::make_shared<spdlog::sinks::stdout_color_sink_st>();
+            spdlog::logger log1 = spdlog::logger("logger1",sink1);
+            log1.set_level(spdlog::level::trace);
+            
+            log1.trace("1.welcome to spdlog!");
+            log1.debug("2.welcome to spdlog!");
+            log1.info("3.welcome to spdlog!");
+            
+            //上面使用的是spdlog默认的格式 [2014-10-31 23:46:59.678] [my_loggername] [info] Some message
+            std::cout << "=====================================" << std::endl;
+            //下面用的是自定义的格式
+
+            log1.set_pattern("[%Y-%m-%d %H:%M:%S] [%^%l%$] %v");   //   重点 [%^%l%$]
+            log1.warn("4.welcome to spdlog!");
+            log1.error("5.welcome to spdlog!");
+            
+            
+            double num = 5.816666666666666;
+            log1.error("6. num = {:.2f}",num);  //重点  以后参考fmt
+
+            return 0;
+        }
+</xmp>
+
+ 
+</body>
+</html>

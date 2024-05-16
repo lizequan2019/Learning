@@ -1,0 +1,67 @@
+# This file is used to ignore files which are generated
+# ----------------------------------------------------------------------------
+
+*~
+*.autosave
+*.a
+*.core
+*.moc
+*.o
+*.obj
+*.orig
+*.rej
+*.so
+*.so.*
+*_pch.h.cpp
+*_resource.rc
+*.qm
+.#*
+*.*#
+core
+!core/
+tags
+.DS_Store
+.directory
+*.debug
+Makefile*
+*.prl
+*.app
+moc_*.cpp
+moc_*.h
+ui_*.h
+qrc_*.cpp
+Thumbs.db
+
+*.res
+/.qmake.cache
+.qmake.stash
+
+
+*.out
+
+# qtcreator generated files
+*.pro.user*
+
+# Vim temporary files
+.*.swp
+
+
+# MinGW generated files
+*.Debug
+*.Release
+
+
+
+# Binaries
+# --------
+*.dll
+*.exe
+
+debug/
+release/
+
+.vscode/
+
+.qtc_clangd/
+
+

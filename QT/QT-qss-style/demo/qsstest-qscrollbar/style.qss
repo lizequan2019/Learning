@@ -1,0 +1,90 @@
+
+/*竖直滚动条主体*/
+QScrollBar:vertical
+{
+    background: #309AB8;
+    min-width: 30px;
+    border-radius: 15px;
+    margin-top: 20px;      /*设置这个是为了上下箭头位置 属于子控件知识点*/
+    margin-bottom: 20px;
+}
+
+/*鼠标点击的滑块*/
+QScrollBar::handle:vertical
+{
+    background: red;
+    border-radius: 13px;
+    min-height: 30px;
+}
+
+
+/* 翻页区域 这个一般设置成透明就行*/
+QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical
+{
+    background:transparent;
+}
+
+/* 箭头区域 */
+QScrollBar::add-line:vertical,QScrollBar::sub-line:vertical
+{
+    height: 20px;
+    background: transparent;
+    subcontrol-origin:margin; /*设置箭头放置在父控件的区域*/
+}
+
+QScrollBar::add-line:vertical
+{
+    border-bottom-left-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+
+QScrollBar::sub-line:vertical
+{
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+
+
+
+/*上拉箭头 下拉箭头*/
+QScrollBar::down-arrow:vertical,QScrollBar::up-arrow:vertical
+{
+    max-height: 10px;
+}
+
+QScrollBar::down-arrow:vertical
+{
+    image:url(./up.svg);
+}
+    
+/*上拉箭头*/
+QScrollBar::up-arrow:vertical
+{
+    image:url(./down.svg);
+}
+
+/*微调子控件*/
+QScrollBar::up-arrow:vertical:hover,QScrollBar::up-arrow:vertical:pressed
+{
+    top: 1px;
+    left: 1px;
+}
+
+QScrollBar::down-arrow:vertical:hover,QScrollBar::down-arrow:vertical:pressed
+{
+    top: 1px;
+    left: 1px;
+}
+
+
+
+QWidget
+{
+    border: none;
+}
+
+QPushButton
+{
+    background-color:brown;
+}
