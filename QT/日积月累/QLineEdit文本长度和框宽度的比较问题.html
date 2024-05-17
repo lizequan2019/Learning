@@ -53,68 +53,75 @@
             ui->lineEdit_show->setPlaceholderText(qstr); 
 </pre>
 
-<p>但是总有一点小问题,一个字符一个字符增加的去试,总会出现占位符文本已经不完全显示了但tips也没有出现的情况。打日志发现此时fontSize小于lineditWidth,说明是fontSize或者lineditWidth的值有问题。</p>
+<p>但是总有一点小问题,一个字符一个字符增加的去试,总会出现一个现象,占位符文本已经不完全显示了但鼠标放在QLineEdit上还是没有出现tips。打日志发现此时fontSize(占位符文本长度)小于lineditWidth(QLineEdit宽度),说明是fontSize或者lineditWidth的值有问题。</p>
 
-<p>这是一个必现问题,虽然没什么影响但是却让我很难受,决定一探究竟。</p>
+<p>这是一个必现问题,可以一探究竟。</p>
 
 <h1>排查</h1>
 
 <p>排查过程还是比较长的,走了好多弯路就不赘述了。总之疑惑可以从qt源码里解决的。排查过程中以下面的函数为入口。</p>
 
 <pre>
-    QString qstrshow = qFontMetrics.elidedText(qstr, Qt::ElideRight, ui->lineEdit_show->width());
-    qDebug() << "qstrshow = " << qstrshow;
+            QString qstrshow = qFontMetrics.elidedText(qstr, Qt::ElideRight, ui->lineEdit_show->width());
+            qDebug() << "qstrshow = " << qstrshow;
 </pre>
 
-<p>通过传入文本内容、隐藏方式和输入框宽度,函数会返回文本的最终展示形态。这个函数返回值出现的问题和上面描述的一样。qstr长度比lineEdit_show宽度小,但返回的文本确是隐藏状态(xxxx...)。这样直接跟踪源码即可。</p>
+<p>通过传入文本内容、隐藏方式和输入框宽度,elidedText函数会返回文本的最终展示形态。这个函数返回值出现的问题和上面描述的一样。qstr长度比lineEdit_show宽度小,但返回的文本确是隐藏状态(形似 xxxx...)。这样直接跟踪源码即可。</p>
 
 <pre>
-    void QLineEdit::paintEvent(QPaintEvent *)内部有如下代码
-
-    initStyleOption(&panel);
-    style()->drawPrimitive(QStyle::PE_PanelLineEdit, &panel, &p, this);
-    QRect r = style()->subElementRect(QStyle::SE_LineEditContents, &panel, this); //此函数执行完 QLineEdit控件 宽度就会小2个像素
 
 
-    其中style()->subElementRect调用的是QCommonStyle::subElementRect,其内部执行至
+            <b>void QLineEdit::paintEvent(QPaintEvent *)</b>内部有如下代码
 
-    case SE_LineEditContents:
-        if (const QStyleOptionFrame *f = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
-            r = f->rect.adjusted(f->lineWidth, f->lineWidth, -f->lineWidth, -f->lineWidth);    //这里进行了调整,调整之后宽度小2个像素【TODO 我感觉应该是小1像素,怎么小2像素了】
-            r = visualRect(opt->direction, opt->rect, r);
-        }
-        break;
-                  
+            initStyleOption(&panel);
+            style()->drawPrimitive(QStyle::PE_PanelLineEdit, &panel, &p, this);
+            QRect r = style()->subElementRect(QStyle::SE_LineEditContents, &panel, this); //此函数执行完 QLineEdit控件 宽度就会小2个像素
 
-    f->lineWidth的值是1,上面的initStyleOption(&panel);中进行赋值。initStyleOption(&panel)内部调用的是QFusionStyle::pixelMetric,其内部执行的代码如下
+            其中<b>>style()->subElementRect</b>调用的是QCommonStyle::subElementRect,其内部执行至
 
-    case PM_DefaultFrameWidth:
-        return 1; // Do not dpi-scale because the drawn frame is always exactly 1 pixel thick
+                    case SE_LineEditContents:
+                        if (const QStyleOptionFrame *f = qstyleoption_cast<const QStyleOptionFrame *>(opt)) {
+                            //这里进行了调整,调整之后宽度小2个像素【TODO 疑惑 我感觉应该是小1像素,怎么小2像素了】
+                            //【DONE 解惑 通过adjusted调整后的矩形宽度 = 原宽度 - 位置偏移 + 宽度调整,如下
+                                     r的宽度 = r.width() - f->lineWidth + (-f->lineWidth) = r.width() - 2
+                                     矩形高度也是这么计算】
+                            r = f->rect.adjusted(f->lineWidth, f->lineWidth, -f->lineWidth, -f->lineWidth);    
+                            r = visualRect(opt->direction, opt->rect, r);
+                        }
+                        break;
+                        
+
+            <b>f->lineWidth</b>的值是1,此值是在上面的<b>initStyleOption(&panel);</b>中进行赋值。
+            initStyleOption(&panel)内部调用的是QFusionStyle::pixelMetric,其内部执行的代码如下
+
+                    case PM_DefaultFrameWidth:
+                        return 1; // Do not dpi-scale because the drawn frame is always exactly 1 pixel thick
 
 
-    接着回到void QLineEdit::paintEvent(QPaintEvent *)中,执行到
+            接着回到<b>void QLineEdit::paintEvent(QPaintEvent *)</b>中,执行到
 
-    QRect lineRect(r.x() + d->horizontalMargin, d->vscroll, r.width() - 2*d->horizontalMargin, fm.height()); //在r的基础上生成lineRect
-    d->horizontalMargin的值是2,来自const int QLineEditPrivate::horizontalMargin(2);//这样lineRect比r又小了4像素
+                    QRect lineRect(r.x() + d->horizontalMargin, d->vscroll, r.width() - 2*d->horizontalMargin, fm.height()); //在r的基础上生成lineRect
+            
+            <b>d->horizontalMargin</b>的值是2,来自<b>const int QLineEditPrivate::horizontalMargin(2);</b>//这样lineRect比r又小了4像素
 
 </pre>
 
 <p>经过源码分析,发现实际用的QLineEdit宽度比传入的小了6像素,所以比较的时候需要把QLineEdit的宽度减6,更新代码如下</p>
 
 <pre>
-    int offset = -6;
-    if(fontSize >= ui->lineEdit_show->width() + offset){
-        ui->lineEdit_show->setToolTip(qstr);
-    }else{
-        ui->lineEdit_show->setToolTip("");
-    }
-    ui->lineEdit_show->setPlaceholderText(qstr);
+            int offset = -6;
+            if(fontSize >= ui->lineEdit_show->width() + offset){
+                ui->lineEdit_show->setToolTip(qstr);
+            }else{
+                ui->lineEdit_show->setToolTip("");
+            }
+            ui->lineEdit_show->setPlaceholderText(qstr);
 </pre>
 
 
 <h1>注意</h1>
 
-<p>如果没有任何样式影响,结果就如上面所示。如果有样式(样式表、操作系统的主题样式)影响,则要再进行额外处理。</p>
+<p>如果没有任何样式影响,结果就如上面所示。如果有样式(例如内外边距)影响,则要再进行额外处理QLineEdit宽度。</p>
 
  
 </body>
