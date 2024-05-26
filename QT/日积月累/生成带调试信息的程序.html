@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>html结构范例</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<h1>Linu平台(GCC)</h1>  
+
+<p>qt pro文件中增加<b>CONFIG += debug</b>,这样编译出的程序携带调试信息。</p>
+
+<p>也可以是<b>CONFIG += debug_and_release</b>,这样就会生成对应版本的Makefile</p>
+
+<pre>
+            Makefile.Release 和 Makefile.Debug
+</pre>
+
+<p>使用Make -f xxx可以编译对应的版本</p>
+
+<br>
+<br>
+<br>
+<br>
+
+<h1>Windows平台(MSVC)</h1>
+
+<p>生成调试信息的方式和Linux平台修改相同</p>
+
+<p>不过Windows平台下存在一类独有的文件,PDB(Program Database)文件,使用下面的命令可以生成独立的PDB文件</p>
+
+<pre>
+            #release版生成pdb文件 
+            QMAKE_CXXFLAGS_RELEASE = $$QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO
+            QMAKE_LFLAGS_RELEASE = $$QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO
+</pre>
+
+<br>
+<br>
+<br>
+<br>
+
+<h1>重新生成Makefile</h1>
+
+<p>因为修改的是pro文件,所以需要重新生成Makefile文件。那么就需要确定使用的qmake</p>
+
+<p>这里我记录一下,在编译qt源码时使用的qmake在哪里</p>
+
+<p>一般编译源码时先执行的./configure就已经执行了qmake,此时可以看执行./configure输出的内容。</p>
+
+<p>编译源码时qmake的位置在<b>xxx/Qt5.12.12/5.12.12/Src/qtbase/bin</b></p>
+
+ 
+</body>
+</html>
