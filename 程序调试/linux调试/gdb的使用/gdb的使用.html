@@ -9,7 +9,8 @@
 
 <p>在可执行程序的当前目录下使用<b>ulimit -c unlimited</b>,不限制core文件的大小。</p>  
 
-<p>接着使用gdb查看core文件查看错误信息,例如gdb xxxx(可执行文件) core(对应的core dumped文件)</p>
+<br>
+<br>
 
 <h2>GDB常用命令</h2>
 
@@ -34,42 +35,27 @@
 
       (gdb)info  : 查看函数内部局部变量的数值,简写i
 
-      (gdb)finish : 结束当前函数,返回到函数调用点
+      (gdb)finish   : 结束当前函数,返回到函数调用点
 
       (gdb)continue : 继续运行,简写c
 
-      (gdb)print : 打印值及地址,简写p
+      (gdb)print   : 打印值及地址,简写p
 
       (gdb)display : 追踪查看具体变量值
 
       (gdb)undisplay : 取消追踪观察变量
 
-      (gdb)watch : 被设置观察点的变量发生修改时,打印显示。
-           awatch : 被设置观察点的变量发生修改或被访问时,打印显示。
+      (gdb)watch   : 被设置观察点的变量发生修改时,打印显示。
+           awatch  : 被设置观察点的变量发生修改或被访问时,打印显示。
            i watch : 显示观察点
 
-      (gdb)enable breakpoints : 启用断点
+      (gdb)enable breakpoints  : 启用断点
 
       (gdb)disable breakpoints : 禁用断点
 
-      (gdb) attach pid : 在程序运行时用gdb挂载程序进行调试。
+      (gdb)attach pid : 在程序运行时用gdb挂载程序进行调试。
 
+      (gdb)gcore xxxx(你定义的core文件名) :  gdb生成core文件在当前目录下
 
-
-
-
-      //实际工作中使用的命令(使用频率高的)
-      1. 带参启动
-         使用gdb启动程序,然后在使用 set args xxx  xxx(启动参数)
-
-      2. 查看所有设置的断点
-         info b
-
-      3. 删除断点
-         delete  num : 删除第num个断点,delete可以简写d
-         delete  num1~num2 : 删除范围断点 
-
-      4. gdb生成core文件
-         gdb 运行程序时 执行 gcore xxxx(你定义的core文件名),文件生成在当前目录下
-
+      (gdb)set args xxx : 带参数启动程序
 </pre>
