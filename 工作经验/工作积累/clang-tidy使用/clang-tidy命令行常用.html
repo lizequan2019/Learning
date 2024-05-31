@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>clang-tidy命令行常用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+ 
+<pre>
+            主要的就是使用方式如下 : 
+                clang-tidy -p=compile_commands.json路径 --quiet --checks=-*,clang-analyzer-*,cppcoreguidelines-*,hicpp-*  mainwindow.cpp
+
+                -p=compile_commands.json : 指定编译数据库的路径
+                --quiet : 静默模式,不输出任何信息
+                --checks=-*,clang-analyzer-*,cppcoreguidelines-*,hicpp-* : 禁用所有检查,只运行指定的检查,<font color="red">具体规则的选择视情况而定</font>
+                mainwindow.cpp : 要检查的源文件路径
+
+            要注意的是必须要有bear make编译出的compile_commands.json文件 <font color="red">注意一些执行权限问题,可能需要sudo权限</font>
+
+</pre>
+ 
+</body>
+</html>
