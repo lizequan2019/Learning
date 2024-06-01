@@ -16,6 +16,15 @@
 <body>
 
 <pre>
+  
+    目前认为以下检查规则的提示比较中肯:
+
+    clang-analyzer-*, 代码潜在问题的检查规则，如内存泄漏、资源泄漏等。
+    performance-*,    代码性能改进的规则，例如不必要的值拷贝。
+    readability-*,    码可读性的规则，比如变量命名、代码复杂度等。
+</pre>
+
+<pre>
 
     clang-tidy --list-checks -checks="*"  //输出所有支持的check规则
 
