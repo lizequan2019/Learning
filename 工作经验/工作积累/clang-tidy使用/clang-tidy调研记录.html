@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>clang-tidy的调研记录</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h2>前言</h2>
+
+<p>本篇文章记录了有关<b>clang-tidy</b>工具的编译、使用、和扩展脚本编写,大部分都是从网上学习的,取之以网,用之于网</p>
+
+<hr>
+
+<h2>为什么要用clang-tidy?</h2>
+
+<p>其实代码规范检测工具也挺多的,但是我想找一款免费、参考资料多、可扩展自定义(<b>非常需要</b>)的代码规范检测工具,最后敲定还是选择了clang-tidy</p>
+
+<p>以前用过cppCheck,但是感觉规则项检查少点,而且好像没有扩展自定义,这次就不考虑了</p>
+
+<hr>
+
+<h2>clang-tidy的编译</h2>
+
+<p>clang-tidy是开源项目LLVM项目的一部分,所以需要先编译LLVM项目,clang-tidy也顺便就编译出来了</p>
+
+<p>也许clang-tidy可以单独编译,或者有更简洁的方法,anyway,我觉得这方法不费脑子,就先这样吧</p>
+
+<p>github上有源码,gitee上也有fork过来的源码,直接就用最新的版本(LLVM version 19.0.0)就好了,这样配合官方文档更好理解</p>
+
+<p><a href="https://zhuanlan.zhihu.com/p/518339529">【网络链接】知乎-为clang-tidy添加自定义check-可以参考如何编译LLVM源码</a></p>
+
+<pre>
+        总结一些上面链接的内容:
+
+            (1) 进入LLVM工程目录,新建 build 目录并进入 mkdir build && cd build
+
+            (2) 执行cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86" -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" ../llvm 
+                通过cmake来生成编译所需的Makefile
+
+            (3) 执行make -j 4来进行编译,在 build/bin/ 中会生成clang-tidy可执行程序
+
+
+</pre>
+
+<p>我建议编译生成的文件就在自己的build目录下存着,然后clang-tidy所在路径直接添加到PATH中即可</p>
+
+<hr>
+
+<h2>clang-tidy的使用</h2>
+
+<p>这里简单的介绍一下clang-tidy的使用方法,也是我的经验之谈,它是可以使用命令行执行的,如下</p>
+
+<pre>
+            clang-tidy -p=compile_commands.json的文件路径 --quiet --checks=-*,clang-analyzer-*,cppcoreguidelines-*,hicpp-*  mainwindow.cpp
+
+                    -p=compile_commands.json : 指定编译数据库的路径,需要使用bear make(需要Makefile)编译出的compile_commands.json文件,<font color="red">注意一些执行权限问题,可能需要sudo权限</font>
+
+                    --quiet : 静默模式,不输出任何信息
+
+                    --checks=-*,clang-analyzer-*,cppcoreguidelines-*,hicpp-* : 指定需要的检测规则
+            
+                    mainwindow.cpp : 要检查的源文件路径
+
+
+</pre>
+
+<p>我仅使用clang-tidy进行单个cpp或者h文件的检测,目前这样的参数配置就已经够我用了</p>
+
+<hr>
+
+<h2>clang-tidy的自定义脚本编写</h2>
+
+<p>clang-tidy的自定义规则扩展并不是去修改脚本,而是在LLVM中修改clang-tidy对应的源码,然后再编译生成新的clang-tidy工具</p>
+
+<p>不过扩写的代码都是在LLVM的框架基础下写的,我们只要关注自己那部分代码就行,其他的都会由脚本生成</p>
+
+<p><a href="https://zhuanlan.zhihu.com/p/518339529">【网络链接】知乎-为clang-tidy添加自定义check-可以参考如何生成自己的规则源码文件</a></p>
+
+<pre>
+        总结一些上面链接的内容:
+
+            在 /clang-tools-extra/clang-tidy/ 目录下, 执行 add_new_check.py 
+
+            例如,在bugprone分类中添加规则,名为multi-pointer,那么在此目录下执行 ./add_new_check.py bugprone multi-pointer
+
+            在bugprone目录下,自动生成了MultiPointerCheck.h/cpp两个文件并填充了check的默认模板,只需要修改这两个文件,然后重新编译即可
+
+
+</pre>
+
+<p>就算是基于框架下编写,当我第一次接触的时候,还是感到一头雾水,怎么样实现自己的规则?规则是什么?有没有资料?</p>
+
+<p><b><font color="ff0000">建议大家认真阅读下面的几篇文章,虽然是英文的,但配合翻译软件还是能读懂一些的,读完后脑中就会有一些概念,再去写代码效果会更好</font></b></p>
+
+<p><a href="https://devblogs.microsoft.com/cppblog/exploring-clang-tooling-part-1-extending-clang-tidy/">【网络链接】Exploring Clang Tooling Part 1: Extending Clang-Tidy</a></p>
+
+<p><a href="https://devblogs.microsoft.com/cppblog/exploring-clang-tooling-part-2-examining-the-clang-ast-with-clang-query/">【网络链接】Exploring Clang Tooling Part 2: Examining the Clang AST with clang-query</a></p>
+
+<p><a href="https://devblogs.microsoft.com/cppblog/exploring-clang-tooling-part-3-rewriting-code-with-clang-tidy/">【网络链接】Exploring Clang Tooling Part 3: Rewriting Code with clang-tidy</a></p>
+
+<hr>
+
+<h2>讲解自己扩展的规则例子</h2>
+
+<p>自己需要扩展的代码check规则 : 检测qt代码中是否存在使用std::string或者string类型的变量,如果存在则提示改用QString类型</p>
+
+<p>按照上面所述的步骤,我已经生成了对应的.cpp和.h文件,h文件没有修改,所以这里就说一下cpp文件</p>
+
+<xmp>
+        这里我仅列出重要的两个函数,其实脚本只生成了这两个函数
+            
+            //注册规则匹配函数 也就是告诉程序,寻找的目标是什么样的? 告诉程序关键字
+            void QstringCpulusplusStyleCheck::registerMatchers(MatchFinder *Finder) { 
+
+                //匹配声明类型为string的变量 绑定到check_string
+                Finder->addMatcher(varDecl(hasType(asString("string"))).bind("check_string"), this); 
+
+                //匹配声明类型为std::string的变量 绑定到check_std_string
+                Finder->addMatcher(varDecl(hasType(asString("std::string"))).bind("check_std_string"), this);
+
+            }
+            
+            //检测函数 也就是告诉程序检测到需要的目标要提示什么?
+            void QstringCpulusplusStyleCheck::check(const MatchFinder::MatchResult &Result) {
+
+                //获取check_string 是否有匹配到的内容
+                if(const auto *MatchedDecl = Result.Nodes.getNodeAs<VarDecl>("check_string")){
+                    if (!MatchedDecl->getIdentifier()){
+                        return;
+                    }
+
+                    //在终端弹出提示,提示可以自己拼接
+                    diag(MatchedDecl->getLocation(), "Please use QString instead of C++style string") << FixItHint::CreateInsertion(MatchedDecl->getLocation(), "use C++style string");
+                }else if(const auto *MatchedDecl = Result.Nodes.getNodeAs<VarDecl>("check_std_string")){
+            
+                    if (!MatchedDecl->getIdentifier()){
+                        return;
+                    }
+                    diag(MatchedDecl->getLocation(), "Please use QString instead of C++style std::string") << FixItHint::CreateInsertion(MatchedDecl->getLocation(), "use C++style std::string");
+                }
+            }
+
+
+</xmp>
+
+<p>我想,就算读者按着注释去看代码,虽然能明白函数的大致作用,但真到自己写的时候还是会很迷茫,代码中的一些函数(例如varDecl hasType getNodeAs)是什么?怎么入参?</p>
+
+<p>按照我的理解,现在使用到的函数分为两类,<b>AST Matcher</b>函数和<b>clang源码</b>函数,最好就是边用边学,慢慢就理解了</p>
+
+<br>
+
+<p><a href="https://clang.llvm.org/docs/LibASTMatchersReference.html">【网络链接】AST Matcher Reference</a></p>
+
+<pre>
+            varDecl、hasType和asString都属于是<b>AST Matcher</b>,说白了就是用于匹配
+
+            读者可以使用clang-query来验证自己的匹配写的对不对,确认匹配正确后再转换成代码
+
+
+</pre>
+
+<p><a href="https://clang.llvm.org/doxygen/classclang_1_1FunctionDecl.html">【网络链接】clang源码</a></p>
+
+<pre>
+            addMatcher、getNodeAs、getIdentifier和getLocation都属于是<b>clang源码</b>,这块就得按照官方的手册去使用了,吐槽官方手册连个搜索栏都没有
+
+
+</pre>
+
+
+<p>最后展示一下输出结果</p>
+
+<pre>
+            clang-tidy -p=./ --quiet --checks=-*,bugprone-qstring-cpulusplus-style   mainwindow.cpp
+
+                    37 warnings generated.
+
+                    
+                    mainwindow.cpp:84:12: warning: Please use QString instead of C++style string [bugprone-qstring-cpulusplus-style]
+                    84 |     string a;
+                        |            ^
+                        |            use C++style string
+                    mainwindow.cpp:85:17: warning: Please use QString instead of C++style std::string [bugprone-qstring-cpulusplus-style]
+                    85 |     std::string b;
+                        |                 ^
+                        |                 use C++style std::string
+
+
+</pre>
+
+<hr>
+
+<h2>后记</h2>
+
+<p>clang-tidy还可以扩展出更为复杂的check规则,我自己列举出来的是十分简单的</p>
+
+<p>如果需要更复杂的匹配,那么就需要对<b>clang AST</b>有更深入的理解,我目前还没有参透,所以本篇笔记也没有去涉及这块内容</p>
+
+<p>还有clang-query工具,虽然我没有展开写,但也是很有用的,也可以用来理解clang AST</p>
+
+
+</body>
+</html>
