@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>getopt的使用</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+
+<h1>解析shell脚本入参</h1>
+
+<p>这里使用<b>getopt</b>命令完成解析。使用版本<b>util-linux 2.38.1</b></p>
+<pre>
+            getopt optstring parameters                                       #第一种解析方式
+            getopt [options] [--] optstring parameters                        #第二种解析方式
+            getopt [options] -o|--options optstring [options] [--] parameters #第三种解析方式
+
+</pre>
+
+<p>为了不搞的很混乱,我这里只介绍第二种解析方式</p>
+
+<h1>第二种解析方式</h1>
+<pre>
+    getopt [options] [--] [optstring] [parameters]
+
+    [options]    :  用来指定getopt的行为,可选
+    [--]         :  破折号,用来分隔getopt的选项和参数
+    [optstring]  : 选项格式
+    [parameters] : 符合optstring格式的参数
+
+</pre>
+
+<p>这里需要介绍一下[optstring] </p>
+<p>[optstring]定义了传入shell脚本中的参数哪些是选项,哪些参数。其中哪些选项需要参数,哪些不需要。选项分为<b>长选项</b>和<b>短选项</b>。定义写起来太麻烦了,我举几个例子就懂了</p>
+<pre>
+            a #短选项
+
+            abc #3个短选项 a b c
+
+            abc: #3个短选项 a b c(必须带参数)
+
+            ab::c: #3个短选项 a b(有无参数都行) c(必须带参数)
+
+            -l  a # 长选项
+
+            -l  a,b #两个长选项 a b
+
+            -l  aa,bbbb  #两个长选项 aa bbbb
+
+            -l  aa,bb::,cc: #3个长选项 aa bbbb(有无参数都行) cc(必须带参数)
+
+</pre>
+
+<p>下面举例使用方法</p>
+<pre>
+            lzq@lzq-pc:~/桌面$ getopt -l aa,bb:,cc -o de:f -- --aa --bb "231 2313" --cc  -d -e "231231 31" -f
+
+            --aa --bb '231 2313' --cc -d -e '231231 31' -f --
+
+            -l aa,bb:,cc : 定义了长选项aa、bb和cc,bb带参数
+            -o de:f      : 定义了短选项d、e和f,e带参数
+            -- 
+            --aa --bb "231 2313" --cc  
+            -d -e "231231 31" -f
+</pre>
+
+
+<h1>在shell脚本中使用</h1>
+<pre>
+            #!/bin/bash
+            
+            arg=$@
+            echo "arg=${arg}"  #先输出一下输入参数
+
+            args=$(getopt  abc:d "$@")
+
+            if [[ $? != 0 ]]
+            then #检查解析参数是否正确
+                    echo "解析输入参数错误，程序退出"
+                    exit 1
+            fi
+
+            eval set -- "${args}"
+
+            #遍历选项并且使用
+            while true
+            do
+                    case "$1" in
+
+                        -a)
+                                echo "【a】"
+                                ;;
+                        -b)
+                                echo "【b】"
+                                ;;
+                        -c)
+                                echo "【c】$2"
+                                shift
+                                ;;
+                        -d)
+                                echo "【d】"
+                                ;;
+                        --) 
+                            break
+                            ;;
+
+                        *) #没有对应的参数走这个分支
+                                echo "【error】$1"
+                                exit 0
+                            ;;
+                    esac
+                    shift
+            done
+
+</pre>
+    
