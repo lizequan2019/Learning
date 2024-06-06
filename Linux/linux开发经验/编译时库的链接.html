@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>编译时库的链接</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<p>gcc -l参数和-L参数,-l参数就是<b>指定程序要链接的库</b>,它后面直接就是库名(要去掉lib前缀和so后缀)比如调用libm.so就写成-lm</p>
+
+<p>接下来就是库位置的选择,<b>ld</b>默认的库位置是/lib、/usr/lib和/usr/local/lib,存储在这些目录的库可以直接用-l参数链接即可</p>
+    
+<p>但如果库文件没放在这三个目录里,而是放在其他目录里,这时我们只用-l参数的话,链接还是会出错,出错信息大概是:<b>"/usr/bin/ld: cannot find -lxxx"</b>,也就是链接程序<b>ld</b>在上面那3个目录里找不到libxxx.so</p>
+
+<p>这时另外一个参数-L就派上用场了.比如常用的X11的库,它在/usr/X11R6/lib目录下,我们编译时就要用<b>-L/usr/X11R6/lib -lX11</b>参数,-L参数后面直接跟库文件所在的目录名,<b>此外还要注意先写-L 再写 -l</b></p>
+    
+<p>gcc编译程序时查找so库文件顺序如下</p>
+<pre>
+            1. gcc编译时参数-L指定的路径
+            2. 环境变量 LIBRARY_PATH
+            3. 系统默认库位置 /lib /usr/lib
+
+
+</pre>
+
+<p>/lib是内核级的,/usr/lib是系统级的,/usr/local/lib是用户级的,大家可以根据自己的情况使用</p>
+    
+<p>-I参数在编译时告诉编译器去哪个路径下找头文件,如:-I /home/hello/include表示将/home/hello/include目录作为第一个寻找头文件的目录</p>
+    
+<p>编译器的寻找顺序是:/home/hello/include --> /usr/include --> /usr/local/include</p>
+
+<pre>
+            -I ./include/  -I ./include2/  这次表示的是在两个目录中查找,
+            
+            注意不要使用 -I ./include/ ./include2/ 连续路径，会出现不能识别的情况
+
+
+</pre>
+
+<p><a href="../../Linux/linux开发经验/代码验证例子/设置头文件位置参数的验证/main.cpp">【本地链接】设置头文件位置参数验证</a></p>  
+
+</body>
+</html>
