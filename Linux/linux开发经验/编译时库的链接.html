@@ -46,7 +46,15 @@
 
 </pre>
 
-<p><a href="../../Linux/linux开发经验/代码验证例子/设置头文件位置参数的验证/main.cpp">【本地链接】设置头文件位置参数验证</a></p>  
+<p><a href="../../Linux/linux开发经验/代码验证例子/设置头文件位置参数的验证/main.cpp">【本地链接】设置头文件位置参数验证</a></p> 
+
+
+<h2>/usr/bin/ld: skipping incompatible解决方案</h2>
+
+<p>做项目的时候,用make命令后出现了/usr/bin/ld : skipping incompatible......问题,这个问题实质是链接库文件时,库文件版本与平台版本不对应的问题.</p>
+
+<p>解决方法:<b>objdump -p libmylib.a</b>看一下该库的版本是32为还是64位的,或是ARM版还是..等等,仔细分析一下,你就会恍然大雾,我的碰到的问题是:编译器选择的是64版,但是xxx.a是32版,当然不兼容</p>
+
 
 </body>
 </html>
