@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+<meta charset="utf-8">
+
+<title>编译时库的链接</title>
+
+<style type="text/css">
+    p{
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
+    }
+ </style>
+
+</head>
+<body>
+
+<h2>程序运行时动态库依赖路径设置方法</h2>
+
+<p>linux的可执行文件在执行时默认是先搜索<b>/lib</b>和<b>/usr/lib</b>这两个目录,然后按照ld.so.conf里面的配置搜索绝对路径,linux默认是不会在当前目录搜索动态库的.所以在编译程序的时候需要设置<b>执行时依赖库的路径</b></p>
+
+<p>1. 编译时指定的运行时库路径-Wl,-rpath,如下</p>
+<pre>
+            g++ main.cpp -ldll1 -ldll2  #没有指定依赖库的路径
+            
+            g++ main.cpp -ldll1 -ldll2 -Wl,-rpath="/usr/local/lib/"
+
+
+</pre>
+
+<p>编译选项-Wl,-rpath.<b>这里是W后面是字母l,而不是数字1</b>,-rpath选项作用会使得程序在运行时会优先去此目录下寻找动态库.具体命令如下:</p>
+<pre>
+            gcc -o OutApp *.c -lzint -Wl,-rpath=”/usr/local/lib”
+            gcc -o OutApp *.c -lzint -Wl,-rpath -Wl,“/usr/local/lib”
+        
+            -Wl,-rpath,dir1:dir2:...:dirN   #已验证 这种连续路径不会出现无法识别的情况
+
+
+</pre> 
+
+<p>这种方法最大的好处就是,在编译成功后,不用再去做任何设置就可以把程序跑起来了,测试代码参见<a href="../../Linux/linux开发经验/代码验证例子/设置运行时动态库查找路径验证/main.cpp">【本地链接】设置运行时动态库查找路径验证</a></p>
+
+<br>
+<br>
+<br>
+
+<p>2. 设置环境变量LD_LIBRARY_PATH,把你指定的依赖库路径设置成优先遍历,避免别的路径影响</p>
+<pre>
+            临时修改方式
+            export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+
+            永久修改方式(要评估对整体的影响)
+            vim  ~/.bashrc
+            export LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH}
+            source ~/.bashrc
+
+
+</pre>
+    
+
+<h2>使用libssl,运行时程序提示未找到定义的符号BIO_new_mem_buf</h2>
+
+<p>刚开始以为是libssl.so库的版本是有问题的,因为软件包中放着各种版本的库,花费了一天去测试哪个能用,然后发现都不行,于是开始沉下心来继续看日志报的错误,找不到<b>BIO_new_mem_buf</b>符号,根据网上所知,这个符号在来自libssl.so,所以开始怀疑是没有链接库导致,后来看了一下还真是</p>
+
+<p>实际过程并不像上面所述的轻巧,也是试了很多方法,这里介绍一个工具nm,是linux下自带的特定文件分析工具,一般用来检查分析二进制文件、库文件、可执行文件中的符号表,返回二进制文件中各段的信息</p>
+
+<p>还有一个问题OPENSSL_1_1_0 not found,这个大概率就是运行时依赖的libssl文件有问题,用nm查看里面真的没有OPENSSL_1_1_0</p>
+
+
+</body>
+</html>
