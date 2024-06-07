@@ -17,15 +17,23 @@
  
 <h1>Linu平台(GCC)</h1>  
 
-<p>qt pro文件中增加<b>CONFIG += debug</b>,这样编译出的程序携带调试信息。</p>
-
-<p>也可以是<b>CONFIG += debug_and_release</b>,这样就会生成对应版本的Makefile</p>
-
+<p>在qt pro文件中增加如下配置,这样编译出的程序携带调试信息</p>
 <pre>
-            Makefile.Release 和 Makefile.Debug
+        CONFIG += debug
+        QMAKE_CXXFLAGS += -g
+
 </pre>
 
-<p>使用Make -f xxx可以编译对应的版本</p>
+<p>这里需要说明一下,qt源码要生成携带调试信息的库时,要找对修改的pro文件,pro文件中有这个字段的,说明是库对应的pro文件</p>
+<pre>
+        TARGET     = QtGui   //不一定是QtGui,主要看你是哪个库
+
+</pre>
+<p>编译源码时qmake的位置在<b>xxx/Qt5.12.12/5.12.12/Src/qtbase/bin</b></p>
+
+<p>源码编译完成后,可以使用make install将生成文件安装到对应的目录,但是在这个过程中,库文件会被剥离掉调试信息</p>
+
+<p>如果不想调试信息被剥离,可以直接将库文件拷贝过去,库文件生成的目录一般在.pro文件所在的lib目录下</p>
 
 <br>
 <br>
@@ -42,23 +50,8 @@
             #release版生成pdb文件 
             QMAKE_CXXFLAGS_RELEASE = $$QMAKE_CFLAGS_RELEASE_WITH_DEBUGINFO
             QMAKE_LFLAGS_RELEASE = $$QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO
+
 </pre>
 
-<br>
-<br>
-<br>
-<br>
-
-<h1>重新生成Makefile</h1>
-
-<p>因为修改的是pro文件,所以需要重新生成Makefile文件。那么就需要确定使用的qmake</p>
-
-<p>这里我记录一下,在编译qt源码时使用的qmake在哪里</p>
-
-<p>一般编译源码时先执行的./configure就已经执行了qmake,此时可以看执行./configure输出的内容。</p>
-
-<p>编译源码时qmake的位置在<b>xxx/Qt5.12.12/5.12.12/Src/qtbase/bin</b></p>
-
- 
 </body>
 </html>
