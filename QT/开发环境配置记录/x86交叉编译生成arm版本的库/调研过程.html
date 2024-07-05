@@ -4,7 +4,7 @@
     
 <meta charset="utf-8">
 
-<title>qt交叉编译过程</title>
+<title>qt5.12.12交叉编译调研过程</title>
 
 <style type="text/css">
     p{
@@ -15,150 +15,184 @@
 </head>
 <body>
  
-<h1>虚拟机环境配置介绍</h1>
+<h1>交叉编译思路</h1>
+<p>交叉编译,就是在x86本地环境下载编译出能在arm环境下运行的程序,我这里的思路就是先用虚拟机搭建一个x86本地环境,然后在虚拟机中部署一个arm根文件系统,用交叉编译链工具在x86本地环境下编译qt源码,需要的库文件就从根文件系统中查找使用</p>
 
-<p>我是用的是virtualbox虚拟机软件,操作系统版本Ubuntu24.04 amd64,10G运行内存,6核,70G空间。使用虚拟机当然是为了方便不断的试错,所以建议大家每完成一个关键步骤就生产一个快照</p>
+<br>
+<hr>
 
-<p>本次交叉编译的qt版本为5.12.12,和公司所用的qt版本相同,也是为了以后方便学习</p>
+<h1>虚拟机配置</h1>
+<p>虚拟机内存设置10G以上,我观察编译qtwebengine的时候,内存消耗会达到9G,所以内存要多设置一些,核心数设置四个以上比较好,磁盘控件设置60G左右就行了</p>
 
-<p>用新版本的ubuntu是考虑涵盖的库应该全些,大部分用包管理器就可以安装,方便</p>
+<br>
+<hr>
 
+<h1>glibc版本的匹配</h1>
+<p>交叉编译首先就是要确保,编译出来的程序是可以在目标环境上运行的,所以要保证可以使用目标环境上的glibc库,当前系统使用的glibc库的版本可以使用下面的命令获取</p>
+<pre>
+            lzq@lzq-VirtualBox:~/forQt/debian-11-linux-rootfs/qtbuild$ ldd --version
+
+            <font color="ff0000">ldd (Ubuntu GLIBC 2.39-0ubuntu8.2) 2.39</font>
+            Copyright (C) 2024 Free Software Foundation, Inc.
+            This is free software; see the source for copying conditions.  There is NO
+            warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+            Written by Roland McGrath and Ulrich Drepper.    
+</pre>
+
+<p>交叉编译出来的程序匹配的glibc版本与arm根文件系统版本有关,所以在选择arm根文件系统时需要注意与目标环境glibc的版本匹配</p>
+
+<br>
+<hr>
+
+<h1>arm根文件系统的选择</h1>
+<p>下文会介绍arm根文件系统的部署方法,这里我先记录一下我已经使用过的arm根文件系统版本</p>
+<table border="1px">
+    <tr> <td>arm根文件系统</td> <td>使用结果</td></tr>
+    <tr> <td>ubuntu24.04</td> <td>可以编译出qtbase库和webengine库,但是glibc版本太高,为2.39,目前嵌入式和国产化系统的版本没有这么高,所以没有普适性</td></tr>
+    <tr> <td>ubuntu18.04~ubuntu22.04</td> <td>使用包管理器无法安装某几个关键的库(例如 gperf),即使编译源码安装上也是有版本问题,依赖的库是一层套一层,太麻烦了,所以放弃</td></tr>
+    <tr> <td>debian11</td> <td>glibc版本是2.31,这是目前国产化操作系统银河麒麟SP1支持的glibc版本,这就很匹配,我的目标也是要适配银河麒麟SP1</td></tr>
+    <tr> <td>debian11或者ubuntu18.04一下的版本</td> <td>按照以上规律,glibc版本逐渐下降,但这些系统我没有尝试,搭建一个环境太麻烦了,读者有兴趣可以试试</td></tr>
+</table>
+<p>本地x86环境的系统版本也要和arm根文件系统一致,这样glibc版本都一样,减少奇怪的兼容问题</p>
+
+<br>
+<hr>
+
+<h1>qt源码版本的选择</h1>
+<p>一般交叉编译都是用在嵌入式开发上,所以qt版本也不会选太高,我这是使用的是qt5.12.12版本,和公司使用的版本匹配</p>
+<p>版本也试过,qtwebengine模块又加了一些新东西,还需要增加额外的环境配置</p>
+
+<br>
 <hr>
 
 <h1>搭建根文件系统</h1>
+<p>在本地x86环境下搭建arm的根文件系统,主要就是为了获取支持arm架构的库文件,其实也可以从目标机上拷贝下来放到本地x86环境中的,但是后期缺什么还需要再拷贝很麻烦,不如搭建跟文件系统,需要什么库就下什么,下面介绍一下搭建过程</p>
+<pre>
+            //安装必要依赖 qemu 能安装就安装,安不了也没事
+            $ sudo apt-get install qemu-user-static binfmt-support debootstrap qemu
+            
 
-<p>在x86环境下搭建arm的根文件系统,这样交叉编译的时候,qt需要什么库都可以从这里面链接到,下面介绍一下搭建过程</p>
-<xmp>
-            # 安装必要依赖
-            $ sudo apt-get install qemu-user-static binfmt-support debootstrap
+            //和下载根文件系统密钥相关
+            $ sudo apt-get install debian-archive-keyring  
 
-            # 创建一个build目录
+            //创建一个build目录
             $ sudo mkdir build
             $ cd build
 
-            # 构建文件系统的命令 
-            # 格式 sudo debootstrap --arch [平台]             [发行版本代号]     [目录]               [源]
-            $      sudo debootstrap --arch=arm64   --foreign      xxxx         linux-rootfs
+            //构建文件系统的命令 sudo debootstrap --arch [平台]             [发行版本代号]      [目录]               [源]
+            $                   sudo debootstrap  --arch=arm64   --foreign      xxxx         linux-rootfs
 
-            # [-foreign] 在与主机架构不相同时需要指定此参数,仅做初始化的解包
-            # [发行版本代号] 我认为用和当前ubuntu系统相同的发行版本一样就行,用lsb_release -a获取
-            # [源] 我使用默认源,所以不填写
+            // [-foreign]     在与主机架构不相同时需要指定此参数,仅做初始化的解包
+            // [发行版本代号] 用lsb_release -a获取  例如 debian11 代号是 bullsey, 注意要用小写字母
+            // [源]           我使用默认源,所以不填写
 
-            # ==================注意此时还是在build目录下操作==================
+            //==================注意此时还是在build目录下操作==================
 
-            # qemu-aarch64-static是其中的关键,能在x86_64主机系统下chroot到arm64文件系统
-            $ sudo cp -a /usr/bin/qemu-aarch64-static ~/build/linux-rootfs/usr/bin/qemu-aarch64-static
+            //qemu-aarch64-static是其中的关键,能在x86_64主机系统下chroot到arm64文件系统
+            $ <font color="ff0000">sudo cp -a /usr/bin/qemu-aarch64-static ~/build/linux-rootfs/usr/bin/qemu-aarch64-static</font>
 
-            # 执行ch-mount.sh脚本  -u 是取消挂载  -m 是挂载  ch-mount.sh脚本的内容在后面
+            //执行ch-mount.sh脚本  -u 是取消挂载  -m 是挂载  ch-mount.sh脚本的内容在下面
             $ ./ch-mount.sh -m linux-rootfs/
 
-            # 执行脚本后,没有报错会进入文件系统,显示 I have no name ,这是正常的
+            //执行脚本后,没有报错会进入文件系统,显示 I have no name ,这是正常的
             I have no name!@node2:/# 
 
-            # 初始化文件系统,会把一个系统的基础包等全部初始化
+            //初始化文件系统,会把一个系统的基础包等全部初始化
             $ debootstrap/debootstrap --second-stage
 
-            # 初始化好了以后,退出文件系统
+            //初始化好了以后,退出文件系统
             $ exit
 
-            # 再次进入时,不需要执行脚本,使用chroot命令即可
+            //再次进入时,不需要执行脚本,使用chroot命令即可
             $ sudo chroot linux-rootfs
 
-            ================================================================================================
+            //================================================================================================
+            //下面是 ch-mount.sh 脚本的内容
 
-                下面是 ch-mount.sh 脚本的内容
+            #!/bin/bash
 
-                #!/bin/bash
+            function mnt() {
+                echo "MOUNTING"
+                sudo mount -t proc /proc ${2}proc
+                sudo mount -t sysfs /sys ${2}sys
+                sudo mount -o bind /dev ${2}dev
+                sudo mount -o bind /dev/pts ${2}dev/pts		
+                sudo chroot ${2}
+            }
+        
+            function umnt() {
+                echo "UNMOUNTING"
+                sudo umount ${2}proc
+                sudo umount ${2}sys
+                sudo umount ${2}dev/pts
+                sudo umount ${2}dev
+        
+            }
+        
+            if [ "$1" == "-m" ] && [ -n "$2" ] ;
+            then
+                mnt $1 $2
+            elif [ "$1" == "-u" ] && [ -n "$2" ];
+            then
+                umnt $1 $2
+            else
+                echo ""
+                echo "Either 1'st, 2'nd or both parameters were missing"
+                echo ""
+                echo "1'st parameter can be one of these: -m(mount) OR -u(umount)"
+                echo "2'nd parameter is the full path of rootfs directory(with trailing '/')"
+                echo ""
+                echo "For example: ch-mount -m /media/sdcard/"
+                echo ""
+                echo 1st parameter : ${1}
+                echo 2nd parameter : ${2}
+            fi
+</pre>
 
-                function mnt() {
-                    echo "MOUNTING"
-                    sudo mount -t proc /proc ${2}proc
-                    sudo mount -t sysfs /sys ${2}sys
-                    sudo mount -o bind /dev ${2}dev
-                    sudo mount -o bind /dev/pts ${2}dev/pts		
-                    sudo chroot ${2}
-                }
-            
-                function umnt() {
-                    echo "UNMOUNTING"
-                    sudo umount ${2}proc
-                    sudo umount ${2}sys
-                    sudo umount ${2}dev/pts
-                    sudo umount ${2}dev
-            
-                }
-            
-                if [ "$1" == "-m" ] && [ -n "$2" ] ;
-                then
-                    mnt $1 $2
-                elif [ "$1" == "-u" ] && [ -n "$2" ];
-                then
-                    umnt $1 $2
-                else
-                    echo ""
-                    echo "Either 1'st, 2'nd or both parameters were missing"
-                    echo ""
-                    echo "1'st parameter can be one of these: -m(mount) OR -u(umount)"
-                    echo "2'nd parameter is the full path of rootfs directory(with trailing '/')"
-                    echo ""
-                    echo "For example: ch-mount -m /media/sdcard/"
-                    echo ""
-                    echo 1st parameter : ${1}
-                    echo 2nd parameter : ${2}
-                fi
-
-</xmp>
-
+<br>
 <hr>
 
 <h1>交叉编译工具链的准备</h1>
-
-<p>交叉编译要C库版本问题,主要是向目标机器(最终要运行程序的机器)看齐,多花一些时间把目标机器开发环境的版本搞清楚,找到合适版本的交叉编译链。</p>
-<xmp>
-            xxx@xxx:/lib/aarch64-linux-gnu$ strings libc.so.6 | grep ^GLIBC_
+<p>交叉编译链的选择也主要glibc版本问题,主要是向目标机器看齐,多花一些时间把目标机器开发环境的版本搞清楚,找到合适版本的交叉编译链。</p>
+<pre>
+            xxx@xxx:/lib/aarch64-linux-gnu$ <font color="ff0000">strings libc.so.6 | grep ^GLIBC_</font>
             GLIBC_2.17
             GLIBC_2.18
             GLIBC_2.22
             GLIBC_2.23
             GLIBC_PRIVATE
-
-</xmp>
-
+</pre>
 <p>查看arm电脑上的结果,可以支持的版本有2.17、2.18、2.22、2.23,也就是说我们要找的交叉编译链的C库版本符合其中的一个就行,这样提高了兼容性。</p>
-
-<p>自己制作编译链太复杂,我这次是在下面这个网站找的</p>
+<p>交叉编译链制作太复杂,我是在下面这个网站找的</p>
 <xmp>
             https://releases.linaro.org/components/toolchain/binaries/   旧版本(我用的这个)
+
+            下面这几个没用过,不过也列出来
 
             https://snapshots.linaro.org/gnu-toolchain/ 新版本
 
             https://www.linaro.org/downloads/ 官方网站
 
             https://developer.arm.com/downloads/-/gnu-a  arm开发工具下载
-
 </xmp>
-
 <p>再点击进入几层目录,直接到达这个地址,选择解压后能直接用的成品(<b>还要注意32位、64位,大端序还是小端序,选择基于自己开发环境的系统和机器</b>),如下</p>
 <xmp>
             https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/aarch64-linux-gnu/
 
             gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz	27-Feb-2018 00:14	86.5M	open     #这个是解压后就能用的
-
 </xmp>
-
 <p>直接下载,放到虚拟机中,解压,首先查看一下上面说到的版本,结果如下,交叉编译链的C库版本有和能目标机器对应的版本,这就是可以用的</p>
 <xmp>
             xxx@xxx:/usr/local/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib$ strings libc.so.6  | grep ^GLIBC_
             GLIBC_2.17
             GLIBC_2.18
             GLIBC_PRIVATE
-
 </xmp>
 
+<br>
 <hr>
 
-<h1>qt文件的配置</h1>
-
+<h1>qt源码文件的配置</h1>
 <p>交叉编译链解压放在某个位置,接着就可以设置<b>xxx/qt-everywhere-src-5.13.2/qtbase/mkspecs/linux-aarch64-gnu-g++</b>对应的编译链路径</p>
 <xmp>
             lzq@lzq-VirtualBox:/opt/qt-src/qt-everywhere-src-5.13.2/qtbase/mkspecs/linux-aarch64-gnu-g++$ cat qmake.conf
@@ -186,24 +220,25 @@
             QMAKE_NM                = /opt/arm-libc/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-nm -P
             QMAKE_STRIP             = /opt/arm-libc/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-strip
             load(qt_config)
-
 </xmp>
 
+<br>
 <hr>
 
 <h1>configure的配置</h1>
-
-<p>创建一个shell脚本用于执行configure,如下,出了问题再一步步完善脚本和库文件(这应该就是最终形态了)</p>
+<p>创建一个shell脚本用于执行qt的configure,如下,出了问题再一步步完善脚本和库文件(这应该就是最终形态了)</p>
 <xmp>
             #!/bin/bash 
 
-            export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
-            export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
-            export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+            cd ~/forQt/qt-everywhere-src-5.12.12
 
-            export PATH=/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
-            export PATH=/home/lzq/forQt/linux-rootfs/usr/lib:${PATH}
-            export PATH=/home/lzq/forQt/linux-rootfs/lzq:${PATH}
+            export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
+            export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+            export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+
+            export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
+            export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${PATH}
+            export PATH=/home/lzq/forQt/debian-11-linux-rootfs/lzq:${PATH}
 
             ./configure  -prefix  /qtbuild \
             -opensource \
@@ -211,25 +246,59 @@
             -confirm-license \
             -nomake examples \
             -nomake tests \
-            -sysroot /home/lzq/forQt/linux-rootfs \
+            -sysroot /home/lzq/forQt/debian-11-linux-rootfs \
             -xplatform linux-aarch64-gnu-g++ \
             -no-opengl \
-            -release \
-            
+            -release 
 </xmp>
 
-
-<h1>其他注意事项</h1>
-
-<p>在后面的操作中,会遇到很多需要安装库的情况,大家可以在本地和根文件中都安装,其实有时候我也不清楚编译时到底需要那边的库,但是都装了不会有额外影响。</p>
-
-<p>到目前为止可以在本地环境和根文件系统上先把g++、gcc、make工具都装上。</p>
-
-
+<br>
 <hr>
 
-<h1><font color="#ff0000">下面的问题都是我执行脚本或者编译时遇到的,基本是按照出现顺序记录的</font></h1>
+<h1>本地环境和根文件系统需要安装的环境</h1>
+<p>这里先列出所有需要安装的库和工具,这只是我进行交叉编译时发现需要安装的,读者实际操作时遇到缺失的库安装即可</p>
+<pre>
+            //本地x86环境和arm根文件系统都要安装,避免出现奇怪的依赖问题
 
+            flex gperf bison pkg-config 
+            zlib1g zlib1g-dev 
+            libgcrypt20 libgcrypt20-dev 
+            liblz4-dev liblz4-1 
+            libzstd-dev  libzstd1  
+            liblzma-dev  liblzma5 
+            fontconfig libfontconfig1-dev 
+            dbus libdbus-1-dev 
+            libsystemd0 libsystemd-dev
+            libnss3 libnss3-dev
+            libgl1-mesa-dev pkg-config
+            g++ gcc make
+</pre>
+
+<br>
+<hr>
+
+<h1>本地x86环境安装Python</h1>
+<p>注意要在上面的环境安装完成后再安装Python,安装Python主要是为了编译qtwebengine,不同版本的qt对Python的版本也不一样,qt5.12.12要求的版本是2.7.5及其以后,我这里采用2.7.18</p>
+<p>需要下载源码在本地x86环境编译安装,根文件系统不需要操作,<a href="https://www.python.org/downloads/release/python-2718/">【网络链接】Python2.7.18下载链接</a></p>
+
+<br>
+<hr>
+
+<h1>目录权限的设置</h1>
+<p>到目前为止,所有的环境已经搭建完毕,还需要进行关键的一步,将qt源码所在目录和根文件系统所在目录的权限设置为777</p>
+<pre>
+            sudo chmod -R 777 xxxx
+</pre>
+<p>由于没有设置这个权限,导致需要使用sudo make执行,此时会导致链接库的路径错误,编译qtwebengine的时候会出问题</p>
+
+<br>
+<hr>
+
+<h1><font color="#ff0000">执行configure脚本并编译源码</font></h1>
+
+<p>下面我记录一些执行configure脚本或者编译过程中会出现的问题,有则改之</p>
+
+<br>
 <hr>
 
 <h1>问题 : 执行脚本遇到语法报错</h1>
@@ -237,19 +306,17 @@
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/include/QtCore/../../src/corelib/global/qendian.h:333:35: error: 'numeric_limits' is not a member of 'std'
             333 |     { return QSpecialInteger(std::numeric_limits<T>::min()); }
     
-            解决方法  对应头文件或源文件增加 #include <limits>
-
-            这个问题在后续的编译中可能还会出现,目前我只会一个个改,有好的方法再更新
-
+            【解决方法】  对应头文件或源文件增加 #include <limits> 这个问题在后续的编译中可能还会出现,目前我只会一个个改,有好的方法再更新
 </xmp>
 
+<br>
 <hr>
 
 <h1>问题 : 缺少必要库</h1>
-<xmp>
-            WARNING: Python version 2 (2.7.5 or later) is required to build QtWebEngine.   源码下载链接 https://www.python.org/downloads/release/python-2718/
+<pre>
+            WARNING: Python version 2 (2.7.5 or later) is required to build QtWebEngine.  源码下载链接 https://www.python.org/downloads/release/python-2718/
 
-            WARNING: gperf is required to build QtWebEngine. 源码下载链接 http://ftp.gnu.org/gnu/gperf/
+            WARNING: gperf is required to build QtWebEngine.                              源码下载链接 http://ftp.gnu.org/gnu/gperf/
             
             WARNING: bison is required to build QtWebEngine. 
             
@@ -257,27 +324,23 @@
             
             WARNING: host pkg-config not found
 
-            解决方法 在根文件系统下安装需要的库(包管理器没有就下载源码自己编译安装,注意版本),
-                     安装完毕后,在根文件系统下创建一个单独的目录,在里面创建若干个软链接,这些软链接分别指向安装好的二进制文件,注意在本地系统环境执行创建软链接命令
+           【解决方法】  在根文件系统下安装需要的库(包管理器没有就下载源码自己编译安装,注意版本),
+                         安装完毕后,在根文件系统下创建一个单独的目录,在里面创建若干个软链接,
+                         这些软链接分别指向这些安装好的二进制文件,<font color="ff0000">注意在本地系统环境执行创建软链接命令</font>
+                         安完一个看一下warning有没有消失(记得删除config.cache再执行脚本)
 
-                                
-            安完一个看一下warning有没有消失(记得删除config.cache再执行脚本)
+           【python这里有点奇怪】我在根文件系统下编译源码安装没有作用,在本地系统下(x86)编译安装反而没有warning了
 
-            【python这里有点奇怪】我在根文件系统下编译源码安装没有作用,在本地系统下(x86)编译安装反而没有warning了[先不论是否有用,让脚本执行先不报错]
+        
+           注意configure脚本需要增加一行
+           export PATH=/home/lzq/forQt/linux-rootfs/lzq/:${PATH}  #就是存放软链接的那个路径
+</pre>
 
-            注意脚本需要增加一行
-            export PATH=/home/lzq/forQt/linux-rootfs/lzq/:${PATH}  #就是存放软链接的那个路径
-  
-</xmp>
-
-<hr>
-
-<p><font color="#ff0000">到了这里,读者可以执行脚本了</font></p>
-
+<br>
 <hr>
 
 <h1>问题 : webengine需要的库缺少</h1>
-<xmp>
+<pre>
             Required system libraries:
                 fontconfig ........................... no
                 dbus ................................. no
@@ -285,34 +348,16 @@
                 khr .................................. no
                 glibc ................................ yes
 
-            走了一段弯路,才知道可以从config.cache看到具体错误
 
-            cache.webengine-fontconfig._KEYS_ = result msgs
-            cache.webengine-fontconfig.result = false
-            cache.webengine-fontconfig.msgs = "Trying source 0 (type pkgConfig) of library webengine-fontconfig ..." "+ PKG_CONFIG_SYSROOT_DIR=/home/lzq/forQt/linux-rootfs PKG_CONFIG_LIBDIR=/home/lzq/forQt/linux-rootfs/usr/lib/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/share/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig /home/lzq/forQt/linux-rootfs/lzq/pkg-config --exists --silence-errors fontconfig" "> /lib/ld-linux-aarch64.so.1: No such file or directory" "pkg-config did not find package." "  => source produced no result."
-
-            错误原因===> /lib/ld-linux-aarch64.so.1: No such file or directory"
-
-            ld-linux-aarch64.so.1找不到加个软链接
-            sudo ln -s /home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1  /lib/ld-linux-aarch64.so.1
-
-
-            根文件系统中上面这些库或者其对应的.pc文件,pc文件需要安装库对应的-dev包,可以用 apt-cache search xxx 查询
+            【解决方法】根文件系统中上面这些库或者其对应的.pc文件,pc文件需要安装库对应的-dev包,
+                        可以用 apt-cache search xxx 查询
 
             例如 
-                    apt-cache search fontconfig | grep dev
+                    apt-cache search fontconfig | grep dev  //会输出一个列表其中包含libfontconfig1-dev
                     apt install libfontconfig1-dev
 
 
-            如法炮制安装 
-                    apt install dbus
-                    apt install libdbus-1-dev
-
-                    apt install libnss3
-                    apt install libnss3-dev
-
-
-            接下来是khr,这个不是库是头文件
+            接下来是khr,这个不是库是头文件,查看config.cache文件可知
 
             cache.webengine-khr._KEYS_ = result msgs
             cache.webengine-khr.result = false
@@ -320,111 +365,102 @@
 
             好像是和opengl有关系,直接执行 apt-get install libgl1-mesa-dev
 
+            
+            还有最后一步操作 将根文件系统/usr/lib/目录下的aarch64-linux-gnu整个文件拷贝到 x86本地环境/lib目录下 
+            然后将x86本地环境 /lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 创建一个软链接放置到/lib下
+
+            <font color="ff0000">这里要注意,如果根文件系统后面又安装了新库,那么还得再操作一遍,保证能链接到新的库文件和找到新的.pc文件</font>
 
             进行完以上操作,webengine要求的系统库就都为yes了
+</pre>
 
-</xmp>
-
+<br>
 <hr>
 
-<h1><font color="#ff0000">现在可以继续编译一波了</font></h1>
-
-<hr>
-
-<h1>问题 : 编译其他库的问题</h1>
-<xmp>
-            gmake[4]: Entering directory '/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil'
-            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++ --sysroot=/home/lzq/forQt/linux-rootfs -Wl,-O1 -Wl,--enable-new-dtags -Wl,-z,origin -Wl,-rpath,\$ORIGIN/../lib -Wl,-rpath-link,/home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib -Wl,-rpath-link,/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialport/lib -o ../../../bin/canbusutil .obj/main.o .obj/readtask.o .obj/canbusutil.o .obj/sigtermhandler.o .obj/moc_readtask.o .obj/moc_canbusutil.o .obj/moc_sigtermhandler.o   /home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/lib/libQt5SerialBus.so /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so -lpthread
+<h1>问题 : 编译过程中报错找不到库</h1>
+<pre>
             /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libz.so.1, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
-            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Network.so.5: undefined reference to `inflateInit2_'
-            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Network.so.5: undefined reference to `inflate'
-            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `compress2'
+            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libdl.so.2, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlerror@GLIBC_2.17'
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `uncompress'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `compress2'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlclose@GLIBC_2.17'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Network.so.5: undefined reference to `inflate'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Network.so.5: undefined reference to `inflateInit2_'
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Network.so.5: undefined reference to `inflateEnd'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlopen@GLIBC_2.17'
+            /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlsym@GLIBC_2.17'
             collect2: error: ld returned 1 exit status
-            gmake[4]: *** [Makefile:99: ../../../bin/canbusutil] Error 1
-            gmake[4]: Leaving directory '/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil'
-            gmake[3]: *** [Makefile:47: sub-canbusutil-make_first] Error 2
-            gmake[3]: Leaving directory '/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools'
-            gmake[2]: *** [Makefile:100: sub-tools-make_first] Error 2
-            gmake[2]: Leaving directory '/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src'
-            gmake[1]: *** [Makefile:49: sub-src-make_first] Error 2
-            gmake[1]: Leaving directory '/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus'
-            gmake: *** [Makefile:236: module-qtserialbus-make_first] Error 2
+            make[4]: *** [Makefile:99：../../../bin/canbusutil] 错误 1
+            make[4]: 离开目录“/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil”
 
+            【解决方法】我认为可以通过设置configure参数来解决这个问题,但是没有找到用哪个参数
+                        但有一个笨办法,就是修改对应的Makefile,在LIBS后面加上需要的库,
+                        比如这个问题就是需要修改/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil目录下的Makefile加上-lz -ldl
+                        
+                        编译过程中大概会有十几个这样的报错,慢慢改吧
+</pre>
 
-            这是动态链接没有找到库的问题,没有找到libz.so.1,所以先在根文件系统中安装libz,如果是别的库就安装别的
+<br>
+<hr>
 
-            apt-get install zlib1g zlib1g-dev
+<h1>问题 : 没有编译qtwebengine</h1>
+<p>编译过一遍会发现qtwebengine并没有被编译,需要单独编译,不知道为什么很奇怪</p>
+<pre>
+        【解决方法】cd /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine
 
-            然后看看是在编译哪个工程报错的,找到对应的Makefile,观察其中的LFLAGS,看看编译时链接会查找的路径是哪个？
-            去对应路径下增加一个所需库的软链接
+                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
+                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
 
-            例如 Makefile中 LFLAGS = --sysroot=/home/lzq/forQt/linux-rootfs -Wl,-O1 -Wl,--enable-new-dtags -Wl,-z,origin -Wl,-rpath,\$$ORIGIN/../lib -Wl,-rpath-link,/home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib -Wl,-rpath-link,/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialport/lib 
-            
-            那么可以在/home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib目录下加libz.so.1的软链接, LFLAGS如果没有-Wl,-rpath-link,我觉得自己也可以加上
+                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
+                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${PATH}
+                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/lzq:${PATH}
 
-</xmp>
-
-<h1>问题 : 编译webengine</h1>
-
-<p>不知为什么得单独去webengine工程目录下进行编译</p>
-
-<xmp>
-            1. 本地环境需要安装 flex bison zlib 然后重新编译和安装Python2.7
-                 sudo apt install zlib1g zlib1g-dev flex bison
-
-            
-            2. 将qt源码目录设置为777权限,避免权限问题
-
-
-            3. 单独编译webengine,需要设置一些环境配置 
-
-                export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
-                export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
-                export LD_LIBRARY_PATH=/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
-
-                export PATH=/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
-                export PATH=/home/lzq/forQt/linux-rootfs/usr/lib:${PATH}
-                export PATH=/home/lzq/forQt/linux-rootfs/lzq:${PATH}
-
-                export PKG_CONFIG_PATH=/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig
-
+                export PKG_CONFIG_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig
 
                 然后  /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/bin/qmake 生成Makefile 并make
 
 
-            4. 还有个编译错误
+                应该会遇到一个编译问题,还是库链接的问题
+                /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/src/process 编译错误
+
+                LIBS 后面再加
+                -lrt -lz -ldl -lpng  -lnssutil3 -lsmime3  -lplds4  -lplc4  -lnspr4  -lexpat  
+                -lfontconfig -lnss3 -lresolv -ldbus-1 -lfreetype -luuid -lsystemd -lbrotlidec
+                -llzma   -lzstd  -llz4  -lgcrypt  -lbrotlicommon  -lgpg-error             
+</pre>
+
+<br>
+<hr>
+
+<h1>问题 : 编译qtwebengine遇到的问题<font color="ff0000">[使用ubuntu24.04作为根文件系统时遇到的]</font></h1>
+<xmp>
+            1. 还有个编译错误
                 ../../3rdparty/chromium/third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.cc:141:65: error: no matching function for call to 'max(int, long int)'
                 static const unsigned kSigStackSize = std::max(16384, SIGSTKSZ);
 
+               【解决方法】
                 sudo vim /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/src/3rdparty/chromium/third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.cc
-
 
                 修改为:
                             long int lzq_temp = 16384;
                             static const unsigned kSigStackSize = std::max(lzq_temp, SIGSTKSZ);
 
 
-
-            5. ../../3rdparty/chromium/ui/gfx/x/x11.h:23:26: fatal error: X11/Xlib-xcb.h: No such file or directory
+            2. ../../3rdparty/chromium/ui/gfx/x/x11.h:23:26: fatal error: X11/Xlib-xcb.h: No such file or directory
                 会出现一些这样找不到头文件的错误
 
-                apt-file search xxxxx.h   #使用这个神器 通过头文件找对应的库文件,然后安装即可
+               【解决方法】
+                apt-file search xxxxx.h  //使用这个神器 通过头文件找对应的库文件,然后安装即可
 
                 本地环境需要安装 【注意,未必需要安装这么多,缺什么安装什么,我只是把自己安装的都记录下来了】
-                sudo apt install libxcursor-dev
-                sudo apt-get install libx11-xcb-dev
-                sudo apt install libxi-dev
-                sudo apt install libxtst-dev
-                sudo apt install libxrandr-dev libghc-x11-doc libghc-x11-doc  libghc-x11-dev
-                sudo apt install libnss3-dev
+                libxcursor-dev libx11-xcb-dev libxi-dev libxtst-dev libxrandr-dev libghc-x11-doc libghc-x11-doc  libghc-x11-dev libnss3-dev
 
                 根文件系统需要安装 
-                sudo apt-get install libxdamage1 libxdamage-dev
+                libxdamage1 libxdamage-dev
 
-
-                #把头文件的路径改一下【注意,未必需要修改,需要修改时再修改】
+                //把头文件的路径改一下【注意,未必需要修改,需要修改时再修改】
                 // Xlib.h defines base types so it must be included before the less
                 // central X11 headers can be included.
                 #include </usr/include/X11/Xlib.h>
@@ -453,25 +489,12 @@
                 #if defined(USE_XSCRNSAVER)
                 #include </usr/include/X11/extensions/scrnsaver.h>
                 #endif
-
-
-            6. 动态库链接错误
-
-                还是按照前面所述 在Maekfile中增加链接路径
-
-                LFLAGS = --sysroot=/home/lzq/forQt/linux-rootfs -Wl,-O1 -Wl,--enable-new-dtags -Wl,-z,origin -Wl,-rpath,\$$ORIGIN/../lib -Wl,-rpath-link,/home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/lib:/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu
-
 </xmp>
 
+<br>
 <hr>
 
-<h1>安装</h1>
-
-<p>qt源码(包括webengine)都编译完了,回到qt源码的根目录,执行sudo make install即可安装</p>
-
-<hr>
-
-<h1>qtcreator配置arm开发环境</h1>
+<h1>后记</h1>
 
 
 
