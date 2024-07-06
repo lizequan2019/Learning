@@ -153,7 +153,7 @@
 <hr>
 
 <h1>交叉编译工具链的准备</h1>
-<p>交叉编译链的选择也主要glibc版本问题,主要是向目标机器看齐,多花一些时间把目标机器开发环境的版本搞清楚,找到合适版本的交叉编译链。</p>
+<p>交叉编译链的选择也主要glibc版本问题,主要是向目标机器看齐,多花一些时间把目标机器开发环境的版本搞清楚,找到合适版本的交叉编译链</p>
 <pre>
             xxx@xxx:/lib/aarch64-linux-gnu$ <font color="ff0000">strings libc.so.6 | grep ^GLIBC_</font>
             GLIBC_2.17
@@ -162,9 +162,9 @@
             GLIBC_2.23
             GLIBC_PRIVATE
 </pre>
-<p>查看arm电脑上的结果,可以支持的版本有2.17、2.18、2.22、2.23,也就是说我们要找的交叉编译链的C库版本符合其中的一个就行,这样提高了兼容性。</p>
+<p>查看arm电脑上的结果,可以支持的版本有2.17、2.18、2.22、2.23,也就是说我们要找的交叉编译链的C库版本符合其中的一个就行,这样提高了兼容性</p>
 <p>交叉编译链制作太复杂,我是在下面这个网站找的</p>
-<xmp>
+<pre>
             https://releases.linaro.org/components/toolchain/binaries/   旧版本(我用的这个)
 
             下面这几个没用过,不过也列出来
@@ -174,27 +174,27 @@
             https://www.linaro.org/downloads/ 官方网站
 
             https://developer.arm.com/downloads/-/gnu-a  arm开发工具下载
-</xmp>
+</pre>
 <p>再点击进入几层目录,直接到达这个地址,选择解压后能直接用的成品(<b>还要注意32位、64位,大端序还是小端序,选择基于自己开发环境的系统和机器</b>),如下</p>
-<xmp>
+<pre>
             https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/aarch64-linux-gnu/
 
             gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz	27-Feb-2018 00:14	86.5M	open     #这个是解压后就能用的
-</xmp>
+</pre>
 <p>直接下载,放到虚拟机中,解压,首先查看一下上面说到的版本,结果如下,交叉编译链的C库版本有和能目标机器对应的版本,这就是可以用的</p>
-<xmp>
+<pre>
             xxx@xxx:/usr/local/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib$ strings libc.so.6  | grep ^GLIBC_
             GLIBC_2.17
             GLIBC_2.18
             GLIBC_PRIVATE
-</xmp>
+</pre>
 
 <br>
 <hr>
 
 <h1>qt源码文件的配置</h1>
 <p>交叉编译链解压放在某个位置,接着就可以设置<b>xxx/qt-everywhere-src-5.13.2/qtbase/mkspecs/linux-aarch64-gnu-g++</b>对应的编译链路径</p>
-<xmp>
+<pre>
             lzq@lzq-VirtualBox:/opt/qt-src/qt-everywhere-src-5.13.2/qtbase/mkspecs/linux-aarch64-gnu-g++$ cat qmake.conf
             #
             # qmake configuration for building with aarch64-linux-gnu-g++
@@ -220,14 +220,14 @@
             QMAKE_NM                = /opt/arm-libc/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-nm -P
             QMAKE_STRIP             = /opt/arm-libc/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-strip
             load(qt_config)
-</xmp>
+</pre>
 
 <br>
 <hr>
 
 <h1>configure的配置</h1>
 <p>创建一个shell脚本用于执行qt的configure,如下,出了问题再一步步完善脚本和库文件(这应该就是最终形态了)</p>
-<xmp>
+<pre>
             #!/bin/bash 
 
             cd ~/forQt/qt-everywhere-src-5.12.12
@@ -250,7 +250,7 @@
             -xplatform linux-aarch64-gnu-g++ \
             -no-opengl \
             -release 
-</xmp>
+</pre>
 
 <br>
 <hr>
@@ -302,12 +302,12 @@
 <hr>
 
 <h1>问题 : 执行脚本遇到语法报错</h1>
-<xmp>
+<pre>
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/include/QtCore/../../src/corelib/global/qendian.h:333:35: error: 'numeric_limits' is not a member of 'std'
             333 |     { return QSpecialInteger(std::numeric_limits<T>::min()); }
     
             【解决方法】  对应头文件或源文件增加 #include <limits> 这个问题在后续的编译中可能还会出现,目前我只会一个个改,有好的方法再更新
-</xmp>
+</pre>
 
 <br>
 <hr>
@@ -361,7 +361,17 @@
 
             cache.webengine-khr._KEYS_ = result msgs
             cache.webengine-khr.result = false
-            cache.webengine-khr.msgs = "+ cd /home/lzq/forQt/qt-everywhere-src-5.12.12/config.tests/khr && PKG_CONFIG_SYSROOT_DIR=/home/lzq/forQt/linux-rootfs PKG_CONFIG_LIBDIR=/home/lzq/forQt/linux-rootfs/usr/lib/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/share/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/bin/qmake \"CONFIG -= qt debug_and_release app_bundle lib_bundle\" \"CONFIG += shared warn_off console single_arch\" \"QMAKE_CFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" \"QMAKE_CXXFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" \"QMAKE_LFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" -early \"CONFIG += cross_compile\" /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr" "+ cd /home/lzq/forQt/qt-everywhere-src-5.12.12/config.tests/khr && MAKEFLAGS= /usr/bin/gmake clean && MAKEFLAGS= /usr/bin/gmake" "> rm -f khr.o" "> rm -f *~ core *.core" "> /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++ -c -pipe --sysroot=/home/lzq/forQt/linux-rootfs --sysroot=/home/lzq/forQt/linux-rootfs -O2 -std=gnu++11 -w -fPIC  -I/home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr -I. -I/home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/mkspecs/linux-aarch64-gnu-g++ -o khr.o /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr/khr.cpp" "> /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr/khr.cpp:29:29: fatal error: KHR/khrplatform.h: No such file or directory" "> compilation terminated." "> gmake: *** [Makefile:169: khr.o] Error 1"
+            cache.webengine-khr.msgs = "+ cd /home/lzq/forQt/qt-everywhere-src-5.12.12/config.tests/khr && PKG_CONFIG_SYSROOT_DIR=/home/lzq/forQt/linux-rootfs 
+            PKG_CONFIG_LIBDIR=/home/lzq/forQt/linux-rootfs/usr/lib/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/share/pkgconfig:/home/lzq/forQt/linux-rootfs/usr/lib/
+            aarch64-linux-gnu/pkgconfig /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/bin/qmake \"CONFIG -= qt debug_and_release app_bundle lib_bundle\" \"CONFIG += 
+            shared warn_off console single_arch\" \"QMAKE_CFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" \"QMAKE_CXXFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" 
+            \"QMAKE_LFLAGS += --sysroot=/home/lzq/forQt/linux-rootfs\" -early \"CONFIG += cross_compile\" /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.
+            tests/khr" "+ cd /home/lzq/forQt/qt-everywhere-src-5.12.12/config.tests/khr && MAKEFLAGS= /usr/bin/gmake clean && MAKEFLAGS= /usr/bin/gmake" "> rm -f khr.o" 
+            "> rm -f *~ core *.core" "> /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-g++ -c -pipe --sysroot=/home/lzq/forQt/
+            linux-rootfs --sysroot=/home/lzq/forQt/linux-rootfs -O2 -std=gnu++11 -w -fPIC  -I/home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr -I. 
+            -I/home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/mkspecs/linux-aarch64-gnu-g++ -o khr.o /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/
+            khr/khr.cpp" "> /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/config.tests/khr/khr.cpp:29:29: fatal error: KHR/khrplatform.h: No such file or 
+            directory" "> compilation terminated." "> gmake: *** [Makefile:169: khr.o] Error 1"
 
             好像是和opengl有关系,直接执行 apt-get install libgl1-mesa-dev
 
@@ -379,8 +389,10 @@
 
 <h1>问题 : 编译过程中报错找不到库</h1>
 <pre>
-            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libz.so.1, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
-            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libdl.so.2, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
+            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libz.
+            so.1, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
+            /home/lzq/forQt/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/bin/../lib/gcc/aarch64-linux-gnu/5.4.1/../../../../aarch64-linux-gnu/bin/ld: warning: libdl.
+            so.2, needed by /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so, not found (try using -rpath or -rpath-link)
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlerror@GLIBC_2.17'
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `uncompress'
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `compress2'
@@ -391,7 +403,7 @@
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlopen@GLIBC_2.17'
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/lib/libQt5Core.so: undefined reference to `dlsym@GLIBC_2.17'
             collect2: error: ld returned 1 exit status
-            make[4]: *** [Makefile:99：../../../bin/canbusutil] 错误 1
+            make[4]: *** [Makefile:99:../../../bin/canbusutil] 错误 1
             make[4]: 离开目录“/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil”
 
             【解决方法】我认为可以通过设置configure参数来解决这个问题,但是没有找到用哪个参数
@@ -494,8 +506,26 @@
 <br>
 <hr>
 
+<h1>不完美之处和遗留问题</h1>
+
+<p>1. 最后发现没有生成libqxcb库文件,如果在国产化系统上执行qt程序时依赖的是自己编译出来的qt库文件,会提示找不到xcb,那这样编译出来的qt程序只能使用国产化系统上的qt库,感觉这种做法使得交叉编译的意义不大了,我尝试去编译libqxcb库文件,但可能是依赖路径没找对,./configure执行都没通过,又尝试了几遍还是没有头绪,所以留下这个问题</p>
+
+<p>2. 编译过程中需要多次修改LISB,增加需要的依赖库,应该是./configure需要配置某些参数</p>
+
+<br>
+<hr>
+
 <h1>后记</h1>
 
+<p>交叉编译这个概念是在上家公司任职中遇见的,当时公司要将产品移植到arm架构的国产化电脑上,arm架构的电脑编译速度慢而且公司一共只有几台,大家都在这几台电脑上编译是很消耗时间的</p>
+<p>后来公司的一个大佬就在服务器上搭建了一套环境用于交叉编译,他自己制作了一个交叉编译工具链,用的是clang,而且搞了一两个月就成了(然后大佬就撤了,我都没来及问问怎么搞的)</p>
+<p>当时我就对交叉编译这个事很感兴趣,感觉很神奇,至此之后我就自己开始捣鼓怎么交叉编译qt源码,没有技术大佬那两把刷子,但在捣鼓中也理解了Makefile文件、qt pro文件以及一些库链接的知识</p>
+<p>虽然没有成功的走到目标地点,但是一路上的风景也是很精彩的</p>
+
+<p>已经断断续续研究一年这个qt源码交叉编译了,没有理论基础只靠自己一点点的尝试很消耗经历,这次就先研究到这里吧,以后再有兴趣继续研究</p>
+
+<br>
+<hr>
 
 
 </body>
