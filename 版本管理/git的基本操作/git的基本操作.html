@@ -6,281 +6,233 @@
 
 <h1>安装git之后的配置</h1>
 
-安装后还不能立刻使用,需要配置用户信息
-
+<p>安装后还不能立刻使用,需要配置用户信息</p>
 <pre>
-    git config --list                        查看配置列表
-    git config --global user.name    " "     配置用户名
-    git config --global user.email   " "     配置邮箱
+                git config --list                        查看配置列表
+                git config --global user.name    " "     配置用户名
+                git config --global user.email   " "     配置邮箱
 </pre>
 
+<br>
 <hr>
 
 <h1>忽略文件的设置</h1>
 
-忽略文件使用<b>.gitignore</b>其格式规范如下：<br>
-1. 所有空行或者以注释符号＃开头的行都会被Git忽略。这就是加注释的方法<br>
-2. 可以使用标准的glob模式匹配(shell所使用的简化了的正则表达式)<br>
-3. 匹配模式最后跟反斜杠/说明要忽略的是目录<br>
-4. 要忽略指定模式以外的文件或目录,可以在模式前加上惊叹号!取反<br>
+<p>忽略文件名<b>.gitignore</b>其格式规范如下:</p>
+<pre>
+                1. 所有空行或者以注释符号＃开头的行都会被Git忽略。这就是加注释的方法
+                2. 可以使用标准的glob模式匹配(shell所使用的简化了的正则表达式)
+                3. 匹配模式最后跟反斜杠/说明要忽略的是目录
+                4. 要忽略指定模式以外的文件或目录,可以在模式前加上惊叹号!取反
+</pre>
 
+<br>
 <hr>
 
 <h1>git命令及介绍</h1>
 
-随着使用,内容会不定期的修改<br>
-
-<br>
+<p>随着使用,内容会不定期的修改</p>
 
 <br>
 
 <h2><p>git add 目录或文件</p></h2>
 
 <p>向暂存区中添加文件或目录,也可以是多个文件</p>
-
 <pre>
-        git add file  file  
-        git add dir/  dir/
+                git add file  file  
+                git add dir/  dir/
 </pre>
 
 
-<p>这是个多态命令,根据目标文件的状态不同,此命令的效果也不同</p>
+<p>这是个<b>多态命令</b>,根据目标文件的状态不同,此命令的效果也不同</p>
 <p>(1) 目标文件未被跟踪,可以用它开始跟踪新文件</p>    
 <p>(2) 目标文件被跟踪但未加入到暂存,把已跟踪的文件放到暂存区</p>   
 <p>(3) <b>用于合并时把有冲突的文件标记为已解决状态等</b></p>
-        
+      
+<br>
 <hr>
 
-<h2><p>git commit -m '版本说明信息'</p></h2>
+<h2><p>git commit -m '提交说明信息'</p></h2>
 
 <p>向版本库提交暂存区的内容并说明版本信息,<b>提交新版本时只提交暂存区里的内容</b></p>
-
 <pre>
-        -a       选项将会自动把所有已经跟踪过的文件暂存起来一并提交,从而跳过 git add 步骤
+                -a       选项将会自动把所有已经跟踪过的文件暂存起来一并提交,从而跳过git add步骤
 
-        --amend  修改最后一次提交,git会直接将暂存区中的内容提交到仓库,而不会考虑工作区是否有改动,
-                如果单纯的使用 git commit 是会检测工作区的变化的,比如被跟踪并且被修改的文件是需要先暂存,
-                通过此命令可以修改上一次提交的记录,也就是说上一次的提交记录会被覆盖
+                --amend  修改最后一次提交,git会直接将暂存区中的内容提交到仓库,而不会考虑工作区是否有改动,
+                         如果单纯的使用 git commit 是会检测工作区的变化的,比如被跟踪并且被修改的文件是需要先暂存,
+                         通过此命令可以修改上一次提交的记录,也就是说上一次的提交记录会被覆盖
 </pre>
 
 <p>修改默认的编辑器为<b>vim</b>,这样在add之后通过git commit就能够调用vim来很方便的编写commit的多行注释了</p>
-
 <pre>
-        git config --global core.editor vim 
+                git config --global core.editor vim 
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git log 文件/空</p></h2>
-
 <pre>
-        (1) 以极简形式显示 git log --oneline     //每个提交记录显示一行
-                        git log -n            //显示n条提交记录
+                (1) 以极简形式显示         
+                git log --oneline             //每个提交记录显示一行
+                git log -n                    //显示n条提交记录
 
-        (2) 查找指定用户的提交日志     git log --author=xxx  
+                (2) 查找指定用户的提交日志  
+                git log --author=xxx  
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git reflog</p></h2>  
 
 <p>显示所有的分支操作,包括删除的记录也会有</p>
 
+<br>
 <hr>
 
 <h2><p>git diff</p></h2>
-
+<p><a href="../../版本管理/diff格式讲解/diff格式讲解.html">【本地链接】diff格式讲解</a> </p>
 <pre>
-        git diff                           #查看工作区和暂存区之间所有的文件差异<br>
+                git diff                            #查看工作区和暂存区之间所有的文件差异
 
-        git diff -- 文件名                  #查看具体某个文件在工作区和暂存区之间的差异<br>
+                git diff -- 文件名                  #查看具体某个文件在工作区和暂存区之间的差异
 
-        git diff -- 文件名1 文件名2 文件名3  #查看多个文件在工作区和暂存区之间的差异<br>
+                git diff -- 文件名1 文件名2 文件名3  #查看多个文件在工作区和暂存区之间的差异
 </pre>
 
+<br>
 <hr>
 
-<h2><p>branch 列出所有分支</p></h2>
-
+<h2><p>git branch 操作分支</p></h2>
 <pre>
-        git branch -v            #查看各个分支最后一次commit信息
+                git branch -v            #查看各个分支最后一次commit信息    main 6410a8b Merge pull request #25 from lizequan2019/branch_mini
 
-        git branch -vv           #查看本地分支和远程分支的跟踪关系  
+                git branch -vv           #查看本地分支和远程分支的跟踪关系   main 6410a8b [origin/main] Merge pull request #25 from lizequan2019/branch_min
 
-        git branch --merge       #筛选出已经与当前分支合并的分支
+                git branch -d 分支名      #删除指明的分支,但是如果此分还包含未合并的工作,使用此命令会失败
 
-        git branch --no -merged  #筛选出未与当前分支合并的分支
+                git branch -D 分支名      #强制删除指明的分支
 
-        git branch -d 分支名      #删除指明的分支,但是如果此分还包含未合并的工作,使用此命令会失败
+                git branch --set-upstream-to=origin/远程分支  本地分支  #设置本地分支跟踪远程分支,下面讲解一个实例
+                
+                        $ git push origin/master test    #准备将test分支推送到远程分支origin/master上
 
-        git branch -D 分支名      #强制删除指明的分支
+                        fatal: 'origin/master' does not appear to be a git repository  <b>#这里提示无法推送</b>
+                        fatal: Could not read from remote repository.
+                        Please make sure you have the correct access rights and the repository exists.
 
-        git branch --set-upstream-to=origin/远程分支  本地分支  #设置本地分支跟踪远程分支,下面讲解一个实例
+                        $ git branch -vv  #查看一下各个分支与远程分支的跟踪关系
+                        master f033b53 [origin/master] 第一版
+                        * test   4d99391 测试新加一个文件                               <b>#这里很明显是test没有跟踪远程分支origin/master</b>
+
+                        $ git branch --set-upstream-to=origin/master  test             <b>#设置跟踪</b>
+                        Branch 'test' set up to track remote branch 'master' from 'origin'.
+
+                        $ git branch -vv                                               <b>#再次查看,本地分支已经跟踪到远程分支</b>
+                        master f033b53 [origin/master] 第一版
+                        * test   4d99391 [origin/master: ahead 1] 测试新加一个文件
 </pre>
 
-<p>设置本地分支跟踪远程分支</p>
-
-<pre>
-
-        $ git push origin/master test    #准备将test分支推送到远程分支origin/master上
-
-        fatal: 'origin/master' does not appear to be a git repository  #这里提示无法推送
-        fatal: Could not read from remote repository.
-        Please make sure you have the correct access rights and the repository exists.
-
-
-
-        $ git branch -vv  #查看一下各个分支与远程分支的跟踪关系
-        master f033b53 [origin/master] 第一版
-        * test   4d99391 测试新加一个文件  #这里很明显是test没有跟踪远程分支origin/master
-
-
-
-        $ git branch --set-upstream-to=origin/master  test  #设置跟踪
-        Branch 'test' set up to track remote branch 'master' from 'origin'.
-
-
-
-        $ git branch -vv  #再次查看
-        master f033b53 [origin/master] 第一版
-        * test   4d99391 [origin/master: ahead 1] 测试新加一个文件
-</pre>
-
+<br>
 <hr>
 
 <h2><p>git checkout</p></h2>  
 
 <pre>
-        git checkout -b 本地分支名                    创建一个分支并切换到新分支上进行工作
+                git checkout 分支名                           切换到对应的分支
 
-        git checkout -b 分支名1  分支名2              根据一个分支2 分出一个分支1,这里没有标出本地分支还是远程分支,是因为还有下面的骚操作
+                git checkout -b 本地分支名                    创建一个分支并切换到新分支上进行工作
 
-        git checkout -b 本地分支  远程仓库名/远程分支名 这其实就是上面操作的衍变,当根据远程分支分化本地分支时,本地分支会自动跟踪远程分支    
+                git checkout -b 分支名1  分支名2              根据一个分支2 分出一个分支1,这里没有标出本地分支还是远程分支,是因为还有下面的骚操作
 
-        git checkout --track 远程仓库名/远程分支名     在本地新建一个和远程分支名相同的分支,会自动跟踪远程分支
+                git checkout -b 本地分支  远程仓库名/远程分支名 这其实就是上面操作的衍变,当根据远程分支分化本地分支时,本地分支会自动跟踪远程分支    
+
+                git checkout --track 远程仓库名/远程分支名     在本地新建一个和远程分支名相同的分支,会自动跟踪远程分支
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git merge 分支名</p></h2>
 
-<p><b>将命令中的分支内容合并到当前所在分支上</b>,也就是将别的分支合并到自己所在的分支上</p>
+<p><b>将命令中的分支内容合并到当前所在分支上</b>,<font color="ff0000">也就是将别的分支合并到自己所在的分支上</font></p>
 
 <hr>
 
 <h2><p>git stash</p></h2>  
 
 <p>保存工作现场,既能保存当前修改,也不会修改当前分支的内容 </p>
-
 <pre>
-        git stash                 保存当前现场
+                git stash                 保存当前现场
 
-        git stash save "xxxxx"    带注释的保存
+                git stash save "xxxxx"    带注释的保存
 
-        git stash list            查看工作现场列表
+                git stash list            查看工作现场列表
 
-        git stash pop             按顺序复工作现场并删除工作现场列表中的记录
+                git stash pop             按顺序复工作现场并删除工作现场列表中的记录
 
-        git stash apply           将堆栈中的内容应用到当前目录,不同于git stash pop,该命令不会将内容从堆栈中删除,
-                                也就说该命令能够将堆栈的内容多次应用到工作目录中,适应于多个分支的情况。
+                git stash apply           将堆栈中的内容应用到当前目录,不同于git stash pop,该命令不会将内容从堆栈中删除,
+                                          也就说该命令能够将堆栈的内容多次应用到工作目录中,适应于多个分支的情况。
 
-        git stash drop "名称"     从堆栈中移除某个指定的stash
+                git stash drop "名称"     从堆栈中移除某个指定的stash
 
-        git stash clear           清除堆栈中的所有内容
+                git stash clear           清除堆栈中的所有内容
 
-        git stash show            查看堆栈中最新保存的stash和当前目录的差异。
+                git stash show            查看堆栈中最新保存的stash和当前目录的差异。
 </pre>
 
+<br>
 <hr>
 
-<h2><p>git push 远程仓库名  本地分支名称</p></h2>
+<h2><p>git push 远程仓库名 本地分支名称</p></h2>
 
-<p>将本地分支推送到远程仓库中,更新远程仓库中名称相同的分支,如果没有的话,远程仓库会自动创建一个分支。另一种写法 ,这种写法可以把本地分支推送到某个命名不同的远程分支上分号两边不要有空格。例如<b>git push origin master:win_master</b> </p>
+<p>将本地分支推送到远程仓库中,更新远程仓库中名称相同的分支,如果没有的话,远程仓库会自动创建一个分支。</p>
 
+<p>另一种写法 ,这种写法可以把本地分支推送到某个命名不同的远程分支上分号两边不要有空格。例如<b>git push origin master:win_master</b> </p>
 <pre>
-        git push  远程仓库名 本地分支名称:远程分支名称   将本地分支提交到远程仓库并重命名
+                git push  远程仓库名 本地分支名称:远程分支名称   将本地分支提交到远程仓库并重命名
 
-        git push origin master                        将本地的master分支推送到origin主机的master分支。相等于git push origin master:master
+                git push origin master                        将本地的master分支推送到origin主机的master分支。相等于git push origin master:master
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git rm</p></h2>
 
-<p>这是git中删除文件文件的命令,肯定是和普通rm命令不一样。执行rm只是对工作区进行了一次修改,但是你还要进行 git add 进行暂存,git rm不仅是将文件删除,并且还将此次修改进行了暂存。</p>
+<p>这是git中删除文件文件的命令,肯定是和普通rm命令不一样。执行rm只是对工作区进行了一次修改,但是你还要进行git add进行暂存,git rm不仅是将文件删除,并且还将此次修改进行了暂存。</p>
 
 <pre>
-        git rm -f         强制删除文件,并将此次操作进行暂存
-        git rm -- cached  删除暂存区文件,但保留工作区的文件,并且将这次删除放入暂存区,文件也会被取消跟踪
+                git rm -f         强制删除文件,并将此次操作进行暂存
+                git rm -- cached  删除暂存区文件,但保留工作区的文件,并且将这次删除放入暂存区,文件也会被取消跟踪
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git mv</p></h2>
 
 <p>功能和mv功能一样,只是此命令会自己进行暂存,机制上和git rm差不多</p>
 
-<hr>
-
-<h2><p>git restore</p></h2> 
-
-<p>网上资料很多,看不过来,所以参考git帮助手册。为了以后看方便,这里直接翻译帮助手册中的重要内容。</p>
-
-<p>此命令可以依据给出的源A恢复当前工作区指定路径的文件内容,<b>[注意]如果A中没有指定路径那么git将删除文件以恢复到和A相同的样子。THIS COMMAND IS EXPERIMENTAL. THE BEHAVIOR MAY CHANGE.(整个git restore命令是实验性的。行为可能会改变)</b> </p>
-
-<p>如果文件没有被git add命令添加跟踪,那么git restore对此文件无效</p>
-
-<pre>
-   
-        -s tree     对于这个参数,刚开始理解狭隘了,以为是指提交记录编号。其实它可以提交记录编号,也可以是分支名,或者是tag。
-                    使用此参数就可以将文件恢复到指定提交记录时的样子。
-                    我测试了一下,如果是本分支内的恢复那么tree就是提交记录编号,如果你想恢复成别的分支的内容那么tree就是分支名但好像只能是HEAD不能恢复成曾经的提交记录,tag没有测试。
-                    如果再使用--staged选项,那么也会恢复暂存区中对应文件的内容
-
-        -W
-        -S          这两个参数用于指定恢复的区域范围,如果不使用任何一个选项,那么默认只有工作区被恢复,使用-S则只有暂存区被恢复。同时使用
-                    -W -S两个选项则工作区和暂存区都被恢复
-
-        --overlay
-        --no-overlay 覆盖模式和非覆盖模式,默认是覆盖模式。覆盖模式其实就是上面说提到的,如果依据恢复的源没有对应的文件,那么当前文件将被删除
-                     如果是非覆盖模式,那么文件不会被删除
-                    
-</pre>
-
-<p><b>注意git版本</b>,低版本的git是没有git restore命令的,这时只能使用git checkout命令</p>
-
+<br>
 <hr>
 
 <h2><p>git remote</p></h2>   
 
 <p>查看当前配置有哪些远程仓库</p>
-
 <pre>
-        git remote -v  选项可以显示对应的克隆地址
+                git remote -v  选项可以显示对应的克隆地址
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git fetch 远程仓库名</p></h2>
 
 <p>将远程主机的仓库最新内容拉到本地,用户在检查了以后决定是否合并到工作本机分支中。</p>
 
-<hr>
-
-<h2><p>git rebase 分支</p></h2>
-
-<p><a href="https://blog.csdn.net/hudashi/article/details/7664631/">git rebase简介(基本篇)</a></p>
-
-<p>git merge和git rebase都可以进行代码合并,而两者的差异体现在合并历史记录上。</p>
-
-<p>git merge的优势是它保留了分支的结构与历史提交目录,但同时这也导致了提交历史会被大量的merge污染</p>
-
-<p>git rebase的优势是可以获得更清晰的项目历史。它消除了git merge所需的不必要的合并提交;git rebase会产生完美线性的项目历史记录,你可以在feature分支上没有任何分叉的情况下一直追寻到项目的初始提交。但是,git rebase会丢失合并提交的上下文,<b>使我们无法看到真实的更改是何时合并到目标分支上的</b></p>
-
-<p><b>注意  永远也不要衍合那些已经推送到公共仓库的更新</b></p>
-
-<p>rebase和merge没有好坏只说,看你更喜爱哪个</p>
-
+<br>
 <hr>
 
 <h2><p>本地仓库与上游仓库进行交互</p></h2> 
@@ -291,102 +243,93 @@
 
 <p>3.当上游仓库更新时,可以在本地仓库进行如下操作</p>
 <pre>
-        # 添加上游仓库
-        git remote add upstream  https://xxxxxx 
- 
-        # 获取上游仓库的数据
-        git fetch upstream  
+                # 添加上游仓库
+                git remote add upstream  https://xxxxxx 
+        
+                # 获取上游仓库的数据
+                git fetch upstream  
 
-        # 切换到与上游仓库对应的分支
-        git checkout  xxxx 
+                # 切换到与上游仓库对应的分支
+                git checkout  xxxx 
 
-        # 将上游仓库的更新合并到本地仓库分支
-        git merge upstream/xxxx 
+                # 将上游仓库的更新合并到本地仓库分支
+                git merge upstream/xxxx 
 
-        # 将合并后的更改推送到远程仓库 
-        git push origin xxxx
+                # 将合并后的更改推送到远程仓库 
+                git push origin xxxx
 
-        # 在远程分支上提交PR到上游仓库,这个在gitlab网页上操作
+                # 在远程分支上提交PR到上游仓库,这个在gitlab网页上操作
 </pre>
 
+<br>
 <hr>
-
-
 
 <h1>日常使用问题以及解决方法</h1>
 
 <h2><p>撤销修改</p></h2> 
-
 <pre>
-        场景1:未add情况 
+                场景1:未add情况 
 
-            当你该乱了工作区某个文件的内容,但是没有将修改添加到暂存区时,想放弃工作区的修改,用命令git checkout -- file。
+                        当你该乱了工作区某个文件的内容,但是没有将修改添加到暂存区时,想放弃工作区的修改,用命令git checkout -- file。
 
-        场景2:未commit
+                场景2:未commit
 
-            当你不但改乱了工作区某个文件的内容,还添加到了暂存区时,想放弃文件的修改,分两步第一步用
-            (1) git reset HEAD file,此时回到场景1。
-            (2) 接着按场景1操作。
+                        当你不但改乱了工作区某个文件的内容,还添加到了暂存区时,想放弃文件的修改,分两步第一步用
+                        (1) git reset HEAD file,此时回到场景1。
+                        (2) 接着按场景1操作。
 
-        场景3:已经commit
+                场景3:已经commit
 
-            当你已经提交了不合适的修改到版本库时,想要放弃本次提交,只能回退到上一版本使用命令 git reset -- hard  版本号。
+                        当你已经提交了不合适的修改到版本库时,想要放弃本次提交,只能回退到上一版本使用命令 git reset -- hard  版本号。
 </pre>
 
-<hr>
-
-<h2><p>显示指定目录下的文件状态</p></h2>  
-
-<pre>
-        git status ./ -uall
-</pre>
-    
+<br>
 <hr>
 
 <h2><p>创建公钥</p></h2>
-
 <pre>
-        cd ~/.ssh   
-        ssh-keygen -t rsa -C "2549524215@qq.com"  //生产公钥
-        cat id_rsa.pub   //查看公钥
+                cd ~/.ssh   
+                ssh-keygen -t rsa -C "2549524215@qq.com"  //生产公钥
+                cat id_rsa.pub   //查看公钥
 
-        ssh-rsa ...(中间省略)... 2549524215@qq.com //这些都是公钥
+                ssh-rsa ...(中间省略)... 2549524215@qq.com //这些都是公钥
 </pre>
 
+<br>
 <hr>
 
 <h2><p>修改远程仓库名</p></h2>
-
 <pre>
-        git remote rename origin CopyPig  #将远程仓库 origin 修改为 CopyPig 
+                git remote rename origin CopyPig  #将远程仓库 origin 修改为 CopyPig 
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git终端中文显示八进制数问题</p></h2>
-
 <pre>
-        git config --global core.quotepath false
+                git config --global core.quotepath false
 </pre>
 
+<br>
 <hr>
 
 <h2><p>忽略文件权限的更改</p></h2>
-
 <pre>
-        git config --global core.fileMode false  #全局
+                git config --global core.fileMode false  #全局
 
-        git config core.fileMode false           #单独的版本库
+                git config core.fileMode false           #单独的版本库
 </pre>
 
+<br>
 <hr>
 
 <h2><p>取消每次提交都要输入帐号密码</p></h2>
-
 <pre>
-        git config --global credential.helper store
+                git config --global credential.helper store
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git设置代理导致的问题</p></h2>
@@ -397,6 +340,7 @@
 
 <p>2. 再考虑系统环境变量中有没有设置代理,使用env查看,修改/etc/profile文件</p>
 
+<br>
 <hr>
 
 <h2><p>克隆最近一次提交的仓库</p></h2>
@@ -404,22 +348,24 @@
 <p>当git仓库的体积很大时,pull整个仓库到本地会很慢,而且还会占用大量的空间,此时可以进行浅克隆,此操作不会获取其他分支和历史信息,只克隆最近一次提交的仓库。</p>
 
 <pre>
-        git clone --depth 1 url
+                git clone --depth 1 url
 </pre>
 
+<br>
 <hr>
 
 <h2><p>克隆仓库某个分支而不是主干</p></h2>
 
 <pre>
-        git clone -b branch-name repository-url
+                git clone -b branch-name repository-url
 </pre>
 
+<br>
 <hr>
 
 <h2><p>git fetch upstream 报错: server certificate verification failed. CAfile: none CRLfile: none</p></h2>
 
 <pre>
-        跳过验证,简单粗暴
-        git config --global http.sslVerify false  
+                跳过验证,简单粗暴
+                git config --global http.sslVerify false  
 </pre>

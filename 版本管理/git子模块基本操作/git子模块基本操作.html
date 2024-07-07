@@ -4,7 +4,7 @@
         }
 </style>
 
-<a href="https://zhuanlan.zhihu.com/p/87053283">参考文章 Git中submodule的使用</a>
+<p><a href="https://zhuanlan.zhihu.com/p/87053283">参考文章 Git中submodule的使用</a></p>
 
 <p>面对比较复杂的项目,我们有可能会将代码根据功能拆解成不同的子模块。</p>
 
@@ -19,25 +19,23 @@
 <p>创建submodule</p>
 
 <p>使用<b>git submodule add <submodule_url></b>命令可以在项目中创建一个子模块。进入项目project-main目录,输入:</p>
-
 <pre>
-        ➜ project-main git:(master) git submodule add https://github.com/username/project-sub-1.git
-        正克隆到 '/path/to/project-main/project-sub-1'...
-        remote: Enumerating objects: 3, done.
-        remote: Counting objects: 100% (3/3), done.
-        remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
-        展开对象中: 100% (3/3), 完成.
+                ➜ project-main git:(master) git submodule add https://github.com/username/project-sub-1.git
+                正克隆到 '/path/to/project-main/project-sub-1'...
+                remote: Enumerating objects: 3, done.
+                remote: Counting objects: 100% (3/3), done.
+                remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
+                展开对象中: 100% (3/3), 完成.
 </pre>
 
 
 <p>此时项目仓库中会多出两个文件:.gitmodules和project-sub-1。前者的内容是这样的,事实上就是子模块的相关信息；而后者那个文件,实际上保存的是子模块当前版本的版本号信息。</p>
 
 <p>如果此前项目中已经存在.gitmodules文件,则会在文件内容中多出下述三行记录。</p>
-
 <pre>
-        [submodule "project-sub-1"]
-        path = project-sub-1
-        url = https://github.com/username/project-sub-1.git       
+                [submodule "project-sub-1"]
+                path = project-sub-1
+                url = https://github.com/username/project-sub-1.git       
 </pre>
 
 <p>通常此时可以使用git commit -m "add submodule xxx"提交一次,表示引入了某个子模块。提交后,在主项目仓库中,会显示出子模块文件夹,并带上其所在仓库的版本号。</p>
@@ -48,27 +46,23 @@
 <p>上述步骤在创建子模块的过程中,会自动将相关代码克隆到对应路径,但对于后续使用者而言,<b>对于主项目使用普通的clone操作并不会拉取到子模块中的实际代码。</b></p>
 
 <p>使用以下命令进行克隆,完成后project-main/project-sub-1文件夹是空的:</p>
-
 <pre>
-        cd /path/to/temp
-        git clone https://github.com/username/project-main.git
+                cd /path/to/temp
+                git clone https://github.com/username/project-main.git
 </pre>
 
 <p>如果希望子模块代码也获取到,一种方式是在克隆主项目的时候带上参数<b>--recurse-submodules</b>,这样会递归地将项目中所有子模块的代码拉取。此时project-main/project-sub-1文件夹是有内容的,并且固定在某个Git提交的版本上。</p>
-
 <pre>
-        cd /path/to/temp2
-        git clone https://github.com/username/project-main.git --recurse-submodules
+                cd /path/to/temp2
+                git clone https://github.com/username/project-main.git --recurse-submodules
 
-        #【注意】这个方法已经在工作上验证过了,确实可以都拉下来,发现拉下来之后右HEAD指针分离的问题,可以执行git checkout master
+                #【注意】这个方法已经在工作上验证过了,确实可以都拉下来,发现拉下来之后右HEAD指针分离的问题,可以执行git checkout master
 </pre>
 
-
 <p>有时候只需要特定的子模块仓库,不需要clone所有的,可以使用下面的命令</p>
-
 <pre>
-        <font color="#ff0000">git submodule update --init 子模块名称</font>
-        #子模块名称的获取可以看.gitmodules文件中的内容
+                <font color="#ff0000">git submodule update --init 子模块名称</font>
+                #子模块名称的获取可以看.gitmodules文件中的内容
 </pre>
 
 
@@ -88,46 +82,43 @@
 <h4><p>情况1:子模块有未跟踪的内容变动</p></h4>
 
 <p>对于第1种情况,通常是在开发环境中,直接修改子模块文件夹中的代码导致的。此时在主项目中使用git status能够看到关于子模块尚未暂存以备提交的变更,但是于主项目而言是无能为力的,使用git add/commit对其也不会产生影响。在此情景下,通常需要进入子模块文件夹,按照子模块内部的版本控制体系提交代码。当提交完成后,主项目的状态则进入了情况2,即当前项目下子模块文件夹内的内容发生了版本变化。</p>
-
 <pre>
-        ➜ project-main git:(master) git status
-        位于分支 master
-        您的分支与上游分支 'origin/master' 一致。
-        尚未暂存以备提交的变更:
-        (使用 "git add <文件>..." 更新要提交的内容)
-        (使用 "git checkout -- <文件>..." 丢弃工作区的改动)
-        (提交或丢弃子模组中未跟踪或修改的内容)
-        修改: project-sub-1 (未跟踪的内容)
-        修改尚未加入提交(使用 "git add" 和/或 "git commit -a")
+                ➜ project-main git:(master) git status
+                位于分支 master
+                您的分支与上游分支 'origin/master' 一致。
+                尚未暂存以备提交的变更:
+                (使用 "git add <文件>..." 更新要提交的内容)
+                (使用 "git checkout -- <文件>..." 丢弃工作区的改动)
+                (提交或丢弃子模组中未跟踪或修改的内容)
+                修改: project-sub-1 (未跟踪的内容)
+                修改尚未加入提交(使用 "git add" 和/或 "git commit -a")
 </pre>
 
 
 <h4><p>情况2:子模块有版本变化</p></h4>
 
 <p>当子模块版本变化时,在主项目中使用git status查看仓库状态时,会显示子模块有新的提交:</p>
-
 <pre>
-        ➜ project-main git:(master) ✗ git status
-        位于分支 master
-        您的分支与上游分支 'origin/master' 一致。
-        尚未暂存以备提交的变更:
-        (使用 "git add <文件>..." 更新要提交的内容)
-        (使用 "git checkout -- <文件>..." 丢弃工作区的改动)
-        修改: project-sub-1 (新提交)
-        修改尚未加入提交(使用 "git add" 和/或 "git commit -a")
+                ➜ project-main git:(master) ✗ git status
+                位于分支 master
+                您的分支与上游分支 'origin/master' 一致。
+                尚未暂存以备提交的变更:
+                (使用 "git add <文件>..." 更新要提交的内容)
+                (使用 "git checkout -- <文件>..." 丢弃工作区的改动)
+                修改: project-sub-1 (新提交)
+                修改尚未加入提交(使用 "git add" 和/或 "git commit -a")
 </pre>
 
 <p>在这种情况下,可以使用git add/commit将其添加到主项目的代码提交中,实际的改动就是那个子模块文件所表示的版本信息:</p>
-
 <pre>
-        git diff HEAD HEAD^
-        diff --git a/project-sub-1 b/project-sub-1
-        index ace9770..7097c48 160000
-        --- a/project-sub-1
-        +++ b/project-sub-1
-        @@ -1 +1 @@
-        -Subproject commit ace977071f94f4f88935f9bb9a33ac0f8b4ba935
-        +Subproject commit 7097c4887798b71cee360e99815f7dbd1aa17eb4
+                git diff HEAD HEAD^
+                diff --git a/project-sub-1 b/project-sub-1
+                index ace9770..7097c48 160000
+                --- a/project-sub-1
+                +++ b/project-sub-1
+                @@ -1 +1 @@
+                -Subproject commit ace977071f94f4f88935f9bb9a33ac0f8b4ba935
+                +Subproject commit 7097c4887798b71cee360e99815f7dbd1aa17eb4
 </pre>
 
 <p>通常当子项目更新后,主项目修改其所依赖的版本时,会产生类似这种情景的commit提交信息。</p>
@@ -138,54 +129,48 @@
 <p>通常来讲,主项目与子模块的开发不会恰好是同时进行的。通常是子模块负责维护自己的版本升级后,推送到远程仓库,并告知主项目可以更新对子模块的版本依赖。在这种情况下,主项目是比较茫然的。之前曾经提到,主项目可以使用git submodule update更新子模块的代码,但那是指当前主项目文件夹下的子模块目录内容与当前主项目记录的子模块版本不一致时,会参考后者进行更新。</p>
 
 <p>但如今这种情况下,当前主项目记录的子模块版本还没有变化,在主项目看来当前情况一切正常。此时,需要主动进入子模块拉取新版代码,进行升级操作。通常流程是:</p>
-
 <pre>
-        cd project-sub-1
-        git pull origin master        
+                cd project-sub-1
+                git pull origin master        
 </pre>
 
 <p>子模块目录下的代码版本会发生变化,转到情况2的流程进行主项目的提交。当主项目的子项目特别多时,可能会不太方便,此时可以使用git submodule的一个命令foreach执行:</p>
-
 <pre>
-        git submodule foreach 'git pull origin master'
+                git submodule foreach 'git pull origin master'
 </pre>
 
 
 <h3><p>删除子模块</p></h3>
 
 <p>根据官方文档的说明,应该使用git submodule deinit命令卸载一个子模块。这个命令如果添加上参数--force,则子模块工作区内即使有本地的修改,也会被移除。</p>
-
 <pre>
-        git submodule deinit project-sub-1
-        git rm project-sub-1
+                git submodule deinit project-sub-1
+                git rm project-sub-1
 </pre>
 
 <p>执行git submodule deinit project-sub-1命令的实际效果,是自动在.git/config中删除了以下内容:</p>
-
 <pre>
-        [submodule "project-sub-1"]
-        url = https://github.com/username/project-sub-1.git
+                [submodule "project-sub-1"]
+                url = https://github.com/username/project-sub-1.git
 </pre>
 
 <p>执行git rm project-sub-1的效果,是移除了project-sub-1文件夹,并自动在.gitmodules中删除了以下内容:</p>
-
 <pre>
-        [submodule "project-sub-1"]
-        path = project-sub-1
-        url = https://github.com/username/project-sub-1.git
+                [submodule "project-sub-1"]
+                path = project-sub-1
+                url = https://github.com/username/project-sub-1.git
 </pre>
 
 <p>此时,主项目中关于子模块的信息基本已经删除(虽然貌似 .git/modules 目录下还有残余,可以手动删除):</p>
-
 <pre>
-        ➜ project-main git:(master) ✗ gs
-        位于分支 master
-        您的分支与上游分支 'origin/master' 一致。
-        要提交的变更:
-        (使用 "git reset HEAD <文件>..." 以取消暂存)
-        修改: .gitmodules
-        删除: project-sub-1
-        可以提交代码:
+                ➜ project-main git:(master) ✗ gs
+                位于分支 master
+                您的分支与上游分支 'origin/master' 一致。
+                要提交的变更:
+                (使用 "git reset HEAD <文件>..." 以取消暂存)
+                修改: .gitmodules
+                删除: project-sub-1
+                可以提交代码:
 </pre>
 
 <p>至此完成对子模块的删除。</p>
