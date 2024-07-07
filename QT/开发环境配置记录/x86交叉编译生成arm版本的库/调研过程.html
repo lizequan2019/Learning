@@ -506,6 +506,20 @@
 <br>
 <hr>
 
+<h1>没有编译出libqxcb库【TODO 未解决】</h1>
+
+<pre>
+    arm根文件系统需要安装下面这些库
+
+    libx11-xcb-dev   libx11-xcb1  libdrm-dev   libdrm2   libdrm-common  libxcomposite1 libxcomposite-dev  libxcursor1 libxcursor-dev  libxi-dev libxi6  libxtst-dev  libxtst6  xcb-proto   libxkbcommon-dev  libxkbcommon-tools   libxkbcommon0  libxkbcommon-x11-dev  libxkbcommon-x11-0
+
+</pre>
+
+<p>然后在configure参数上增加 -xcb,发现执行过不去,不知道什么原因</p>
+
+<br>
+<hr>
+
 <h1>不完美之处和遗留问题</h1>
 
 <p>1. 最后发现没有生成libqxcb库文件,如果在国产化系统上执行qt程序时依赖的是自己编译出来的qt库文件,会提示找不到xcb,那这样编译出来的qt程序只能使用国产化系统上的qt库,感觉这种做法使得交叉编译的意义不大了,我尝试去编译libqxcb库文件,但可能是依赖路径没找对,./configure执行都没通过,又尝试了几遍还是没有头绪,所以留下这个问题</p>
@@ -526,6 +540,8 @@
 
 <br>
 <hr>
+
+
 
 
 </body>
