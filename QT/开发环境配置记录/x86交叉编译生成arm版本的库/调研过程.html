@@ -10,25 +10,26 @@
     p{
     text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
     }
- </style>
+</style>
 
 </head>
+
 <body>
  
 <h1>交叉编译思路</h1>
-<p>交叉编译,就是在x86本地环境下载编译出能在arm环境下运行的程序,我这里的思路就是先用虚拟机搭建一个x86本地环境,然后在虚拟机中部署一个arm根文件系统,用交叉编译链工具在x86本地环境下编译qt源码,需要的库文件就从根文件系统中查找使用</p>
+<p>思路就是在虚拟机里搭建一个x86本地环境,然后在x86本地环境中再部署一个arm根文件系统,在x86本地环境用交叉编译链工具编译qt源码,编译过程中链接根文件系统中的库文件</p>
 
 <br>
 <hr>
 
 <h1>虚拟机配置</h1>
-<p>虚拟机内存设置10G以上,我观察编译qtwebengine的时候,内存消耗会达到9G,所以内存要多设置一些,核心数设置四个以上比较好,磁盘控件设置60G左右就行了</p>
+<p>虚拟机内存设置10G以上,我观察编译qtwebengine的时候,内存消耗会达到9G,所以内存要多设置一些,核心数设置四个以上比较好,磁盘空间设置60G左右就行了</p>
 
 <br>
 <hr>
 
 <h1>glibc版本的匹配</h1>
-<p>交叉编译首先就是要确保,编译出来的程序是可以在目标环境上运行的,所以要保证可以使用目标环境上的glibc库,当前系统使用的glibc库的版本可以使用下面的命令获取</p>
+<p>交叉编译首先就是要确保编译出来的程序是可以在目标环境上运行的,因此要保证arm根文件系统使用的glibc版本和目标环境上版本一致,操作系统使用的glibc库的版本可以使用下面的命令获取</p>
 <pre>
             lzq@lzq-VirtualBox:~/forQt/debian-11-linux-rootfs/qtbuild$ ldd --version
 
@@ -39,13 +40,11 @@
             Written by Roland McGrath and Ulrich Drepper.    
 </pre>
 
-<p>交叉编译出来的程序匹配的glibc版本与arm根文件系统版本有关,所以在选择arm根文件系统时需要注意与目标环境glibc的版本匹配</p>
-
 <br>
 <hr>
 
 <h1>arm根文件系统的选择</h1>
-<p>下文会介绍arm根文件系统的部署方法,这里我先记录一下我已经使用过的arm根文件系统版本</p>
+<p>下文会介绍arm根文件系统的部署方法,这里我先记录一下我已经使用过的arm根文件系统版本和使用结果</p>
 <table border="1px">
     <tr> <td>arm根文件系统</td> <td>使用结果</td></tr>
     <tr> <td>ubuntu24.04</td> <td>可以编译出qtbase库和webengine库,但是glibc版本太高,为2.39,目前嵌入式和国产化系统的版本没有这么高,所以没有普适性</td></tr>
@@ -60,13 +59,13 @@
 
 <h1>qt源码版本的选择</h1>
 <p>一般交叉编译都是用在嵌入式开发上,所以qt版本也不会选太高,我这是使用的是qt5.12.12版本,和公司使用的版本匹配</p>
-<p>版本也试过,qtwebengine模块又加了一些新东西,还需要增加额外的环境配置</p>
+<p>qt5.15.x版本也试过,其qtwebengine模块又加了一些新东西,还需要增加额外的环境配置才能编译出来(没有深入研究)</p>
 
 <br>
 <hr>
 
 <h1>搭建根文件系统</h1>
-<p>在本地x86环境下搭建arm的根文件系统,主要就是为了获取支持arm架构的库文件,其实也可以从目标机上拷贝下来放到本地x86环境中的,但是后期缺什么还需要再拷贝很麻烦,不如搭建跟文件系统,需要什么库就下什么,下面介绍一下搭建过程</p>
+<p>在本地x86环境下搭建arm的根文件系统,主要就是为了获取arm架构的库文件,其实也可以从目标机上拷贝下来放到本地x86环境中的,但是后期缺什么还需要再拷贝很麻烦(但是适配度高),不如搭建跟文件系统方便,需要什么库就下什么,两种方法各有优劣,下面介绍一下搭建过程</p>
 <pre>
             //安装必要依赖 qemu 能安装就安装,安不了也没事
             $ sudo apt-get install qemu-user-static binfmt-support debootstrap qemu
@@ -153,17 +152,7 @@
 <hr>
 
 <h1>交叉编译工具链的准备</h1>
-<p>交叉编译链的选择也主要glibc版本问题,主要是向目标机器看齐,多花一些时间把目标机器开发环境的版本搞清楚,找到合适版本的交叉编译链</p>
-<pre>
-            xxx@xxx:/lib/aarch64-linux-gnu$ <font color="ff0000">strings libc.so.6 | grep ^GLIBC_</font>
-            GLIBC_2.17
-            GLIBC_2.18
-            GLIBC_2.22
-            GLIBC_2.23
-            GLIBC_PRIVATE
-</pre>
-<p>查看arm电脑上的结果,可以支持的版本有2.17、2.18、2.22、2.23,也就是说我们要找的交叉编译链的C库版本符合其中的一个就行,这样提高了兼容性</p>
-<p>交叉编译链制作太复杂,我是在下面这个网站找的</p>
+<p>交叉编译链制作太复杂,我是在下面这个网站找的,只要gcc和g++支持C++14应该就可以</p>
 <pre>
             https://releases.linaro.org/components/toolchain/binaries/   旧版本(我用的这个)
 
@@ -180,13 +169,6 @@
             https://releases.linaro.org/components/toolchain/binaries/5.4-2017.05/aarch64-linux-gnu/
 
             gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu.tar.xz	27-Feb-2018 00:14	86.5M	open     #这个是解压后就能用的
-</pre>
-<p>直接下载,放到虚拟机中,解压,首先查看一下上面说到的版本,结果如下,交叉编译链的C库版本有和能目标机器对应的版本,这就是可以用的</p>
-<pre>
-            xxx@xxx:/usr/local/gcc-linaro-5.4.1-2017.05-x86_64_aarch64-linux-gnu/aarch64-linux-gnu/libc/lib$ strings libc.so.6  | grep ^GLIBC_
-            GLIBC_2.17
-            GLIBC_2.18
-            GLIBC_PRIVATE
 </pre>
 
 <br>
@@ -226,7 +208,7 @@
 <hr>
 
 <h1>configure的配置</h1>
-<p>创建一个shell脚本用于执行qt的configure,如下,出了问题再一步步完善脚本和库文件(这应该就是最终形态了)</p>
+<p>创建一个shell脚本用于执行qt的configure,如下,出了问题再一步步完善脚本和库文件</p>
 <pre>
             #!/bin/bash 
 
@@ -249,36 +231,29 @@
             -sysroot /home/lzq/forQt/debian-11-linux-rootfs \
             -xplatform linux-aarch64-gnu-g++ \
             -no-opengl \
-            -release 
+            -release \
+            -qpa xcb \
+            -xcb \
+            -no-strip \
+            'QMAKE_LFLAGS += -L/lib/aarch64-linux-gnu -ldl -lrt -lz -lpng -lpthread -lmd -lXau -lbsd -lXdmcp'
 </pre>
 
 <br>
 <hr>
 
 <h1>本地环境和根文件系统需要安装的环境</h1>
-<p>这里先列出所有需要安装的库和工具,这只是我进行交叉编译时发现需要安装的,读者实际操作时遇到缺失的库安装即可</p>
+<p>这里先列出所有需要安装的库和工具,这只是我进行交叉编译时发现需要安装的,读者实际操作时遇到缺失的库安装即可,后面还会有要安装的库</p>
+<p><font color="ff0000">本地x86环境和arm根文件系统都要安装,避免出现奇怪的依赖问题</font></p>
 <pre>
-            //本地x86环境和arm根文件系统都要安装,避免出现奇怪的依赖问题
-
-            flex gperf bison pkg-config 
-            zlib1g zlib1g-dev 
-            libgcrypt20 libgcrypt20-dev 
-            liblz4-dev liblz4-1 
-            libzstd-dev  libzstd1  
-            liblzma-dev  liblzma5 
-            fontconfig libfontconfig1-dev 
-            dbus libdbus-1-dev 
-            libsystemd0 libsystemd-dev
-            libnss3 libnss3-dev
-            libgl1-mesa-dev pkg-config
-            g++ gcc make
+            flex gperf bison pkg-config zlib1g zlib1g-dev libgcrypt20 libgcrypt20-dev liblz4-dev liblz4-1 libzstd-dev libzstd1 liblzma-dev liblzma5 
+            fontconfig libfontconfig1-dev dbus libdbus-1-dev libsystemd0 libsystemd-dev libnss3 libnss3-dev libgl1-mesa-dev pkg-config g++ gcc make
 </pre>
 
 <br>
 <hr>
 
 <h1>本地x86环境安装Python</h1>
-<p>注意要在上面的环境安装完成后再安装Python,安装Python主要是为了编译qtwebengine,不同版本的qt对Python的版本也不一样,qt5.12.12要求的版本是2.7.5及其以后,我这里采用2.7.18</p>
+<p>注意要在上面的环境安装完成后再安装Python,否则后面会提示python缺少库,安装Python主要是为了编译qtwebengine,不同版本的qt对Python的版本也不一样,qt5.12.12要求的版本是2.7.5及其以后,我这里采用2.7.18</p>
 <p>需要下载源码在本地x86环境编译安装,根文件系统不需要操作,<a href="https://www.python.org/downloads/release/python-2718/">【网络链接】Python2.7.18下载链接</a></p>
 
 <br>
@@ -295,7 +270,6 @@
 <hr>
 
 <h1><font color="#ff0000">执行configure脚本并编译源码</font></h1>
-
 <p>下面我记录一些执行configure脚本或者编译过程中会出现的问题,有则改之</p>
 
 <br>
@@ -306,7 +280,8 @@
             /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/include/QtCore/../../src/corelib/global/qendian.h:333:35: error: 'numeric_limits' is not a member of 'std'
             333 |     { return QSpecialInteger(std::numeric_limits<T>::min()); }
     
-            【解决方法】  对应头文件或源文件增加 #include <limits> 这个问题在后续的编译中可能还会出现,目前我只会一个个改,有好的方法再更新
+            【解决方法】  
+                        对应头文件或源文件增加 #include <limits> 这个问题在后续的编译中可能还会出现,目前我只会一个个改,有好的方法再更新
 </pre>
 
 <br>
@@ -329,11 +304,9 @@
                          这些软链接分别指向这些安装好的二进制文件,<font color="ff0000">注意在本地系统环境执行创建软链接命令</font>
                          安完一个看一下warning有没有消失(记得删除config.cache再执行脚本)
 
-           【python这里有点奇怪】我在根文件系统下编译源码安装没有作用,在本地系统下(x86)编译安装反而没有warning了
+                         python这里有点奇怪 我在根文件系统下编译源码安装没有作用,在本地系统下(x86)编译安装反而没有warning了
 
-        
-           注意configure脚本需要增加一行
-           export PATH=/home/lzq/forQt/linux-rootfs/lzq/:${PATH}  #就是存放软链接的那个路径
+                         <font color="ff0000">注意前面提到的脚本需要增加一行export PATH=/home/lzq/forQt/linux-rootfs/lzq/:${PATH},就是存放软链接的那个路径</font>     
 </pre>
 
 <br>
@@ -379,7 +352,7 @@
             还有最后一步操作 将根文件系统/usr/lib/目录下的aarch64-linux-gnu整个文件拷贝到 x86本地环境/lib目录下 
             然后将x86本地环境 /lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 创建一个软链接放置到/lib下
 
-            <font color="ff0000">这里要注意,如果根文件系统后面又安装了新库,那么还得再操作一遍,保证能链接到新的库文件和找到新的.pc文件</font>
+            <font color="ff0000"><b>这里要注意,如果在后面的操作中arm根文件系统又安装了新库,那么还得再操作一遍,保证能链接到新的库文件和找到新的.pc文件!!!!!!!!!!!!!!!!</b></font>
 
             进行完以上操作,webengine要求的系统库就都为yes了
 </pre>
@@ -406,143 +379,133 @@
             make[4]: *** [Makefile:99:../../../bin/canbusutil] 错误 1
             make[4]: 离开目录“/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil”
 
-            【解决方法】我认为可以通过设置configure参数来解决这个问题,但是没有找到用哪个参数
-                        但有一个笨办法,就是修改对应的Makefile,在LIBS后面加上需要的库,
-                        比如这个问题就是需要修改/home/lzq/forQt/qt-everywhere-src-5.12.12/qtserialbus/src/tools/canbusutil目录下的Makefile加上-lz -ldl
-                        
-                        编译过程中大概会有十几个这样的报错,慢慢改吧
+            【解决方法】这里看报错可知,编译时需要连接 libz 和 libdl,还有别的库要链接,如下:
+
+                        在上面的脚本后增加参数 'QMAKE_LFLAGS += -L/lib/aarch64-linux-gnu -lrt -lz -ldl -lpng -lpthread'
 </pre>
 
 <br>
 <hr>
 
 <h1>问题 : 没有编译qtwebengine</h1>
-<p>编译过一遍会发现qtwebengine并没有被编译,需要单独编译,不知道为什么很奇怪</p>
-<pre>
-        【解决方法】cd /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine
-
-                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
-                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
-                export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
-
-                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
-                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${PATH}
-                export PATH=/home/lzq/forQt/debian-11-linux-rootfs/lzq:${PATH}
-
-                export PKG_CONFIG_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig
-
-                然后  /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/bin/qmake 生成Makefile 并make
-
-
-                应该会遇到一个编译问题,还是库链接的问题
-                /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/src/process 编译错误
-
-                LIBS 后面再加
-                -lrt -lz -ldl -lpng  -lnssutil3 -lsmime3  -lplds4  -lplc4  -lnspr4  -lexpat  
-                -lfontconfig -lnss3 -lresolv -ldbus-1 -lfreetype -luuid -lsystemd -lbrotlidec
-                -llzma   -lzstd  -llz4  -lgcrypt  -lbrotlicommon  -lgpg-error             
+          
 </pre>
 
 <br>
 <hr>
 
-<h1>问题 : 编译qtwebengine遇到的问题<font color="ff0000">[使用ubuntu24.04作为根文件系统时遇到的]</font></h1>
+<h1>问题 : 没有编译出libqxcb库</h1>
+<pre>
+            arm根文件操作系统下需要安装的库,宁多勿少
+
+                libx11-xcb-dev libx11-xcb1 libdrm-dev libdrm2 libdrm-common libxcomposite1 libxcomposite-dev libxcursor1 libxcursor-dev libxi-dev libxi6 libxtst-dev libxtst6 xcb-proto libxkb*
+
+            前面的脚本后面还需要增加参数
+                -qpa xcb\
+                -xcb \
+                'QMAKE_LFLAGS += -L/lib/aarch64-linux-gnu -ldl -lmd -lXau -lbsd -lXdmcp'
+    
+</pre>
+
+<br>
+<hr>
+
+<h1>问题 : 编译qtwebengine遇到的问题</h1>
 <xmp>
-            1. 还有个编译错误
-                ../../3rdparty/chromium/third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.cc:141:65: error: no matching function for call to 'max(int, long int)'
+            1.编译过一遍会发现qtwebengine并没有被编译,需要单独编译,不知道为什么很奇怪
+
+            【解决方法】
+            
+                        cd /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine
+
+                        执行下列命令
+                        export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${LD_LIBRARY_PATH}
+                        export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+                        export LD_LIBRARY_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${LD_LIBRARY_PATH}
+
+                        export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu:${PATH}
+                        export PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib:${PATH}
+                        export PATH=/home/lzq/forQt/debian-11-linux-rootfs/lzq:${PATH}
+
+                        export PKG_CONFIG_PATH=/home/lzq/forQt/debian-11-linux-rootfs/usr/lib/aarch64-linux-gnu/pkgconfig
+
+                        然后  /home/lzq/forQt/qt-everywhere-src-5.12.12/qtbase/bin/qmake 生成Makefile 并make
+
+
+            2. 编译错误
+                exception_handler.cc:141:65: error: no matching function for call to 'max(int, long int)'
                 static const unsigned kSigStackSize = std::max(16384, SIGSTKSZ);
 
-               【解决方法】
-                sudo vim /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/src/3rdparty/chromium/third_party/breakpad/breakpad/src/client/linux/handler/exception_handler.cc
+                        【解决方法】
+                                    修改exception_handler.cc
 
-                修改为:
-                            long int lzq_temp = 16384;
-                            static const unsigned kSigStackSize = std::max(lzq_temp, SIGSTKSZ);
+                                    static const unsigned kSigStackSize = std::max(16384, SIGSTKSZ); 
+                                    修改为如下:
+                                    long int lzq_temp = 16384;
+                                    static const unsigned kSigStackSize = std::max(lzq_temp, SIGSTKSZ);
 
 
-            2. ../../3rdparty/chromium/ui/gfx/x/x11.h:23:26: fatal error: X11/Xlib-xcb.h: No such file or directory
+            3. ../../3rdparty/chromium/ui/gfx/x/x11.h:23:26: fatal error: X11/Xlib-xcb.h: No such file or directory
                 会出现一些这样找不到头文件的错误
 
                【解决方法】
-                apt-file search xxxxx.h  //使用这个神器 通过头文件找对应的库文件,然后安装即可
+                            apt-file search xxxxx.h  //使用这个神器 通过头文件找对应的库文件,然后安装即可
 
-                本地环境需要安装 【注意,未必需要安装这么多,缺什么安装什么,我只是把自己安装的都记录下来了】
-                libxcursor-dev libx11-xcb-dev libxi-dev libxtst-dev libxrandr-dev libghc-x11-doc libghc-x11-doc  libghc-x11-dev libnss3-dev
+                            根文件系统需要安装
+                            libxrandr-dev libxdamage-dev libxdamage1
 
-                根文件系统需要安装 
-                libxdamage1 libxdamage-dev
+                            //把头文件的路径改一下,前面加上arm根文件系统路径
+                            // Xlib.h defines base types so it must be included before the less
+                            // central X11 headers can be included.
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xlib.h>
+                            
+                            // And the rest so that nobody needs to include them manually...
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/X.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/XKBlib.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xatom.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xcursor/Xcursor.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xlib-xcb.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xregion.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/Xutil.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/cursorfont.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XI2.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XInput.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XInput2.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XIproto.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XShm.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/XTest.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/Xfixes.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/Xrandr.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/Xrender.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/record.h>
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/shape.h>
+                            
+                            #if defined(USE_XSCRNSAVER)
+                            #include </home/lzq/forQt/debian-11-linux-rootfs/usr/include/X11/extensions/scrnsaver.h>
+                            #endif
 
-                //把头文件的路径改一下【注意,未必需要修改,需要修改时再修改】
-                // Xlib.h defines base types so it must be included before the less
-                // central X11 headers can be included.
-                #include </usr/include/X11/Xlib.h>
-                
-                // And the rest so that nobody needs to include them manually...
-                #include </usr/include/X11/X.h>
-                #include </usr/include/X11/XKBlib.h>
-                #include </usr/include/X11/Xatom.h>
-                #include </usr/include/X11/Xcursor/Xcursor.h>
-                #include </usr/include/X11/Xlib-xcb.h>
-                #include </usr/include/X11/Xregion.h>
-                #include </usr/include/X11/Xutil.h>
-                #include </usr/include/X11/cursorfont.h>
-                #include </usr/include/X11/extensions/XI2.h>
-                #include </usr/include/X11/extensions/XInput.h>
-                #include </usr/include/X11/extensions/XInput2.h>
-                #include </usr/include/X11/extensions/XIproto.h>
-                #include </usr/include/X11/extensions/XShm.h>
-                #include </usr/include/X11/extensions/XTest.h>
-                #include </usr/include/X11/extensions/Xfixes.h>
-                #include </usr/include/X11/extensions/Xrandr.h>
-                #include </usr/include/X11/extensions/Xrender.h>
-                #include </usr/include/X11/extensions/record.h>
-                #include </usr/include/X11/extensions/shape.h>
-                
-                #if defined(USE_XSCRNSAVER)
-                #include </usr/include/X11/extensions/scrnsaver.h>
-                #endif
+            4.  应该会遇到一个编译问题,还是库链接的问题 /home/lzq/forQt/qt-everywhere-src-5.12.12/qtwebengine/src/process编译错误
+
+                【解决方法】
+
+                            LIBS 后面再加上这些库的链接 
+                            -lrt -lz -ldl -lpng -lnssutil3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lexpat -lfontconfig -lnss3 -lresolv -ldbus-1 
+                            -lfreetype -luuid -lsystemd -lbrotlidec -llzma -lzstd -llz4 -lgcrypt -lbrotlicommon -lgpg-error -lX11  -lX11-xcb 
+                            -lxcb  -lXcomposite -lXcursor -lXdamage -lXext -lXfixes -lXi -lXrender -lXtst
 </xmp>
 
 <br>
 <hr>
 
-<h1>没有编译出libqxcb库【TODO 未解决】</h1>
+<h1>注意事项再总结</h1>
 
 <pre>
-    arm根文件系统需要安装下面这些库
-
-    libx11-xcb-dev   libx11-xcb1  libdrm-dev   libdrm2   libdrm-common  libxcomposite1 libxcomposite-dev  libxcursor1 libxcursor-dev  libxi-dev libxi6  libxtst-dev  libxtst6  xcb-proto   libxkbcommon-dev  libxkbcommon-tools   libxkbcommon0  libxkbcommon-x11-dev  libxkbcommon-x11-0
-
+            1.qt源码目录设置777权限
+            2.安装库,尽量本地x86环境和arm根文件系统环境都安装
+            3.确保arm库向本地x86环境拷贝的库都是最新最全的,和arm根文件系统环境保持一致
 </pre>
 
-<p>然后在configure参数上增加 -xcb,发现执行过不去,不知道什么原因</p>
-
 <br>
-<hr>
-
-<h1>不完美之处和遗留问题</h1>
-
-<p>1. 最后发现没有生成libqxcb库文件,如果在国产化系统上执行qt程序时依赖的是自己编译出来的qt库文件,会提示找不到xcb,那这样编译出来的qt程序只能使用国产化系统上的qt库,感觉这种做法使得交叉编译的意义不大了,我尝试去编译libqxcb库文件,但可能是依赖路径没找对,./configure执行都没通过,又尝试了几遍还是没有头绪,所以留下这个问题</p>
-
-<p>2. 编译过程中需要多次修改LISB,增加需要的依赖库,应该是./configure需要配置某些参数</p>
-
-<br>
-<hr>
-
-<h1>后记</h1>
-
-<p>交叉编译这个概念是在上家公司任职中遇见的,当时公司要将产品移植到arm架构的国产化电脑上,arm架构的电脑编译速度慢而且公司一共只有几台,大家都在这几台电脑上编译是很消耗时间的</p>
-<p>后来公司的一个大佬就在服务器上搭建了一套环境用于交叉编译,他自己制作了一个交叉编译工具链,用的是clang,而且搞了一两个月就成了(然后大佬就撤了,我都没来及问问怎么搞的)</p>
-<p>当时我就对交叉编译这个事很感兴趣,感觉很神奇,至此之后我就自己开始捣鼓怎么交叉编译qt源码,没有技术大佬那两把刷子,但在捣鼓中也理解了Makefile文件、qt pro文件以及一些库链接的知识</p>
-<p>虽然没有成功的走到目标地点,但是一路上的风景也是很精彩的</p>
-
-<p>已经断断续续研究一年这个qt源码交叉编译了,没有理论基础只靠自己一点点的尝试很消耗经历,这次就先研究到这里吧,以后再有兴趣继续研究</p>
-
-<br>
-<hr>
-
-
-
 
 </body>
 </html>
