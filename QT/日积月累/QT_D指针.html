@@ -18,7 +18,6 @@
 <h1>Q_D语法解读</h1>
 
 <p>D指针的宏定义为 <b>#define Q_D(Class) Class##Private * const d = d_func()</b></p>
-
 <pre>
             #define                
             Q_D                          宏的名称
@@ -29,6 +28,7 @@
 
 </pre>
 
+<br>
 <hr>
 
 <h1>PImpl(Pointer to Implementation)技巧</h1>
@@ -36,7 +36,6 @@
 <p>如上举例,当入参是QFile时,展开结果为QFilePrivate * const d = d_func(),QFilePrivate是什么?和QFile是什么关系?</p>
 
 <p>这里需要简单的介绍一下PImpl</p>
-
 <pre>
             Pointer to Implementation(简称PImpl)是一种C++设计模式，也称为"编译期实现"或"指向实现的指针"
 
@@ -49,23 +48,23 @@
 <p>也就是说QFilePrivate是QFile的细节实现类,那么QFilePrivate * const d = d_func()就是获取了细节实现类的指针,然后进行功能调用</p>
 
 <p>这里注意QFilePrivate * const d是一个常量指针,此指针指向的地址不可更改,但是可以修改存储的值</p>
-
 <pre>
             QFile::QFile(const QString &name) : QFileDevice(*new QFilePrivate, 0)
             {
                 Q_D(QFile);
                 d->fileName = name;
             }
+
 </pre>
 
 <p>关于PImpl更详细的说明可以参考csdn博客<a href="https://blog.csdn.net/Appleeatingboy/article/details/129261011?ops_request_misc=%257B%2522request%255Fid%2522%253A%2522171616858116800211551832%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&request_id=171616858116800211551832&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduend~default-1-129261011-null-null.142^v100^pc_search_result_base9&utm_term=Pointer%20to%20Implementation&spm=1018.2226.3001.4187">【网络链接】PImpl(Pointer to Implementation)指向实现的指针</a></p>
 
+<br>
 <hr>
 
 <h1>d_func()语法解读</h1>
 
 <p>d_func()是在宏定义Q_DECLARE_PRIVATE中出现的,QFile类中会这么使用,Q_DECLARE_PRIVATE(QFile),如此,上面的Q_D(QFile)就可以找到d_func()定义了</p>
-
 <pre>
             #define Q_DECLARE_PRIVATE(Class) \
 
@@ -77,28 +76,22 @@
 
             friend class Class##Private;
 
-
-
 </pre>
 
 <p>Q_DECLARE_PRIVATE宏定义展开后,可以看到<b>d_func()</b>分为两个版本,d_func()用于非const成员函数,d_func() const用于const成员函数</p>
 
 <p>关于Q_DECLARE_PRIVATE宏展开,我还是有点疑惑,如下</p>
-
 <pre>
             const成员函数下
-            Q_D(QFile) => QFilePrivate * const d = d_func()      # d_func()的返回值类型是 const QFilePrivate * const
-                                                                 # <b>【疑惑1】 const QFilePrivate * const 是强制转换成了 QFilePrivate * const吗?</b>
+            Q_D(QFile) => QFilePrivate * const d = d_func()    # d_func()的返回值类型是 const QFilePrivate * const
+                                                               # <b>【疑惑1】 const QFilePrivate * const 是强制转换成了 QFilePrivate * const吗?</b>
 
             非const成员函数下
-                Q_D(QFile) => QFilePrivate * const d = d_func()  # d_func()的返回值类型是 QFilePrivate *   
-                                                                 # <b>【疑惑2】 QFilePrivate * 是强制转换成了 QFilePrivate * const吗?</b>
-
-                
+            Q_D(QFile) => QFilePrivate * const d = d_func()    # d_func()的返回值类型是 QFilePrivate *   
+                                                               # <b>【疑惑2】 QFilePrivate * 是强制转换成了 QFilePrivate * const吗?</b>
 </pre>
 
 <p>这里直接将QFile的源文件(qfile.cpp)进行宏展开,查看结果,选择查看<b>QString QFile::fileName() const 和 void QFile::setFileName</b></p>
-
 <pre>
             QString QFile::fileName() const
             {
@@ -120,24 +113,24 @@
                 }
                 d->fileName = name;
             }
-    
-
 
 </pre>
 
 <p>这里记录一下预编译命令</p>
-
 <pre>
             #在qfile.cpp所在目录下执行此命令
 
-            g++ -fPIC -E qfile.cpp -o /home/lzq/桌面/output.i   -I /opt/Qt5.12.12/5.12.12/Src/qtbase/mkspecs/linux-g++/  -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore  -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore/5.12.12/ -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore/5.12.12/QtCore/ -I /opt/Qt5.12.12/5.12.12/Src/qtbase/src/corelib/.moc  
-
-
+            g++ -fPIC -E qfile.cpp -o /home/lzq/桌面/output.i   
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/mkspecs/linux-g++/  
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore  
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include 
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore/5.12.12/ 
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/include/QtCore/5.12.12/QtCore/ 
+                      -I /opt/Qt5.12.12/5.12.12/Src/qtbase/src/corelib/.moc
 
 </pre>
 
 <p>宏定义展开后</p>
-
 <pre>
             QString QFile::fileName() const
             {
@@ -161,11 +154,7 @@
                 d->fileName = name;
             }
 
-
-
 </pre>
-
-
 
 </body>
 </html>
