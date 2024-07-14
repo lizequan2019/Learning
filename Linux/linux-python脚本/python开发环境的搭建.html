@@ -17,7 +17,7 @@
  
 <p>有时开发是需要指定python版本的,所以就不要使用包管理器下载python了,直接去官网下载,选择对应版本的python源码,我使用的是3.9.5</p>
 
-<p>下载后编译,执行 ./configure --prefix="安装目录"就行了</p>
+<p>下载后编译,执行 ./configure --prefix="/home/lzq/python-build"就行了</p>
 
 <p>然后就会在安装目录下生成一些文件,如下</p>
 <pre>
@@ -28,7 +28,7 @@
 <p>接着设置永久环境变量,这样你调用python命令时就不用加路径了,在~/.bashrc文件下增加如下语句</p>
 
 <pre>
-            export PATH="$PATH:安装目录"
+            export PATH="$PATH:/home/lzq/python-build/bin"
 
 </pre>
 
@@ -39,7 +39,7 @@
 <pre>
             PYTHONPATH是一个环境变量,用于在Python中添加额外的库搜索路径
 
-            export PYTHONPATH="$PYTHONPATH:/home/lzq/build-for-python/pylib_3party"
+            export PYTHONPATH="$PYTHONPATH:/home/lzq/python-build/pylib_3party"
 
 </pre>
 
