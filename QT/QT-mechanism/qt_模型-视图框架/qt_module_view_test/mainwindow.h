@@ -2,8 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QAbstractItemModel>
-
+#include <QStringListModel>
+#include <QStandardItemModel>
+#include <QStandardItem>
+#include <QDebug>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,8 +19,8 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-private slots:
-    void on_pushButton_clicked();
+    //不同模型的父模型索引查询
+    void fun_1();
 
 private:
     Ui::MainWindow *ui;
