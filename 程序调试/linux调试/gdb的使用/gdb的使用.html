@@ -5,9 +5,53 @@
 </style>
 
 
-<h2>对Segmentation fault (core dumped)的处理</h2>
+<h1>设置不限制core文件的大小</h1>
 
-<p>在可执行程序的当前目录下使用<b>ulimit -c unlimited</b>,不限制core文件的大小。</p>  
+<p>有的系统默认core文件大小为0,所以不会生成core文件,修改core文件大小有两个方法</p>
+
+<p>临时方法 : 在终端使用命令<b>ulimit -c unlimited</b></p>  
+
+<p>永久生效 : 修改<b>/etc/security/limits.conf文件</b>
+<pre>
+         vi /etc/security/limits.conf
+
+         添加两行:
+         *     soft   core unlimited
+         *     hard  core unlimited
+
+         用命令修改的方式:
+         echo "* soft core unlimited" >> /etc/security/limits.conf
+         echo "* hard core unlimited" >> /etc/security/limits.conf
+</pre>
+
+<br>
+<br>
+
+<h1>core文件的位置</h1>
+
+<p>目前使用kylin系统比较多,所以就先纪录一下此系统core文件的存储位置,默认是在<b>/var/lib/systemd/coredump</b></p>
+<pre>
+         lzq@lzq-pc:/var/lib/systemd/coredump$ ls -l
+
+         7月  17 22:39 core.fcitx-dbus-watc.1000.171ddf62d14b4da582a533acd626a624.1840.1721227186000000000000.lz4
+         7月  16 09:47 core.fcitx-dbus-watc.1000.dd1c92cda7f1451f87386a5f66c579d6.1822.1721094420000000000000.lz4
+         7月  15 09:35 core.findfiles.0.627d9a1999d34f8ba6b6270e6acca050.180484.1721007340000000000000.lz4
+         7月  16 20:36 core.findfiles.1000.b992a845381d44e6842542ecae1fe7ed.357498.1721133389000000000000.lz4
+         7月  16 20:46 core.findfiles.1000.b992a845381d44e6842542ecae1fe7ed.367916.1721134017000000000000.lz4
+         7月  16 17:25 core.kylin-software-.0.dd1c92cda7f1451f87386a5f66c579d6.964.1721121899000000000000.lz4
+         7月  15 10:28 core.ukui-screensave.1000.627d9a1999d34f8ba6b6270e6acca050.372755.1721010525000000000000.lz4
+</pre>
+<p>这些core文件都是压缩的,可以使用命令解压<b>lz4 -d xxxx.lz4 xxxxx</b></p>
+
+
+<p>执行coredumpctl list可以查询最近崩溃的信息,通过日期和别的信息可以和上面的core文件对应起来</p>
+<pre>
+         lzq@lzq-pc:~$ coredumpctl list | grep findfiles
+
+         Mon 2024-07-15 09:35:40 CST  180484     0     0  11 error     /home/lzq/qt-test/findfiles/findfiles
+         Tue 2024-07-16 20:36:30 CST  357498  1000  1000  11 present   /home/lzq/qt-test/findfiles/findfiles
+         Tue 2024-07-16 20:46:57 CST  367916  1000  1000  11 present   /home/lzq/qt-test/findfiles/findfiles
+</pre>
 
 <br>
 <br>
@@ -15,47 +59,45 @@
 <h2>GDB常用命令</h2>
 
 <pre>
-      (gdb)help : 查看命令帮助,具体命令查询在gdb中输入help + 命令,简写h
+         (gdb)help : 查看命令帮助,具体命令查询在gdb中输入help + 命令,简写h
 
-      (gdb)run  : 重新开始运行文件(run-text:加载文本文件,run-bin:加载二进制文件),简写r
+         (gdb)run  : 重新开始运行文件(run-text:加载文本文件,run-bin:加载二进制文件),简写r
 
-      (gdb)start: 单步执行,运行程序,停在第一执行语句
+         (gdb)start: 单步执行,运行程序,停在第一执行语句
 
-      (gdb)list : 查看原代码
-                  
-      (gdb)set  : 设置变量的值
+         (gdb)list : 查看原代码
+                     
+         (gdb)set  : 设置变量的值
 
-      (gdb)next : 单步调试(逐过程,函数直接执行),简写n
+         (gdb)next : 单步调试(逐过程,函数直接执行),简写n
 
-      (gdb)step : 单步调试(逐语句:跳入自定义函数内部执行),简写s
+         (gdb)step : 单步调试(逐语句:跳入自定义函数内部执行),简写s
 
-      (gdb)backtrace : 查看函数的调用的栈帧和层级关系,简写bt
+         (gdb)backtrace : 查看函数的调用的栈帧和层级关系,简写bt
 
-      (gdb)frame : 切换函数的栈帧,简写f
+         (gdb)frame : 切换函数的栈帧,简写f
 
-      (gdb)info  : 查看函数内部局部变量的数值,简写i
+         (gdb)info  : 查看函数内部局部变量的数值,简写i
 
-      (gdb)finish   : 结束当前函数,返回到函数调用点
+         (gdb)finish   : 结束当前函数,返回到函数调用点
 
-      (gdb)continue : 继续运行,简写c
+         (gdb)continue : 继续运行,简写c
 
-      (gdb)print   : 打印值及地址,简写p
+         (gdb)print   : 打印值及地址,简写p
 
-      (gdb)display : 追踪查看具体变量值
+         (gdb)display : 追踪查看具体变量值
 
-      (gdb)undisplay : 取消追踪观察变量
+         (gdb)undisplay : 取消追踪观察变量
 
-      (gdb)watch   : 被设置观察点的变量发生修改时,打印显示。
-           awatch  : 被设置观察点的变量发生修改或被访问时,打印显示。
-           i watch : 显示观察点
+         (gdb)enable breakpoints  : 启用断点
 
-      (gdb)enable breakpoints  : 启用断点
+         (gdb)disable breakpoints : 禁用断点
 
-      (gdb)disable breakpoints : 禁用断点
+         (gdb)attach pid : 在程序运行时用gdb挂载程序进行调试。
 
-      (gdb)attach pid : 在程序运行时用gdb挂载程序进行调试。
+         (gdb)gcore xxxx(你定义的core文件名) :  gdb生成core文件在当前目录下
 
-      (gdb)gcore xxxx(你定义的core文件名) :  gdb生成core文件在当前目录下
+         (gdb)set args xxx : 带参数启动程序
 
-      (gdb)set args xxx : 带参数启动程序
+         (gdb)exe -c core : 调试程序时带core文件
 </pre>

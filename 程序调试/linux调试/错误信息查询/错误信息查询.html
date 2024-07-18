@@ -1,32 +1,40 @@
 <style type="text/css">
     p{
-    text-indent: 2em; /*em是相对单位，2em即现在一个字大小的两倍*/
+    text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
     }
 </style>
 
 
 <h2>查询错误码的文件</h2>
 
+<p>在实际编程中,errno-base.h和errno.h共同为Linux系统下的错误处理提供了基础支持。</p>
+
+<p>开发人员可以通过包含这些头文件来访问errno变量和一系列预定义的错误码宏,从而实现对程序执行过程中可能遇到的错误情况进行有效的诊断和处理。</p>
 <pre>
-        /usr/include/asm-generic/errno-base.h    
-        /usr/include/asm-generic/errno.h    
+            //注意文件位置可能会不同
+
+            /usr/include/asm-generic/errno-base.h    
+            /usr/include/asm-generic/errno.h  
+
 </pre>
 
-<h2>函数使用</h2>
+<br>
+<hr>
 
+<h2>函数使用</h2>
 <pre>
-        #include <stdio.h>  
-        #include <string.h>  
-        #include <errno.h>  
-            
-        int main(int argc, char* argv[])  
-        {  
-            FILE *fp;  
-            if ((fp = fopen(argv[1], "r")) == NULL)  
+            #include <stdio.h>  
+            #include <string.h>  
+            #include <errno.h>  
+                
+            int main(int argc, char* argv[])  
             {  
-                perror("perror:");  
-                printf("strerror:%s\n", strerror(errno));  
-            }  
-            return 0;  
-        } 
+                FILE *fp;  
+                if ((fp = fopen(argv[1], "r")) == NULL)  
+                {  
+                    perror("perror:");  
+                    printf("strerror:%s\n", strerror(errno));  
+                }  
+                return 0;  
+            } 
 </pre>
