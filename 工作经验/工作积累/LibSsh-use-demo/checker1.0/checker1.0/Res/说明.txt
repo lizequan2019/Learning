@@ -1,4 +1,0 @@
-1.样式表以及对应的图片文件
-2.执行结果界面显示的状态图标也在pic中
-3.pageTemplate.html 文件是一个模板文件，用于导出pdf用
-4.CherckerIcon.ico是可执行文件图标
