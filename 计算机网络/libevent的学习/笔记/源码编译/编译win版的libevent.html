@@ -17,7 +17,7 @@
  
 <h2>环境准备</h2>
 
-<xmp>
+<pre>
 
             系统环境     : win10
             编译器       : vs2019
@@ -27,61 +27,53 @@
             openssl源码  :  最新版本
             libevent源码 : 最新版本 v2.2.x
 
+</pre>
 
-
-</xmp>
+<br>
+<hr>
 
 <h2>说明</h2>
  
 <p>所有的命令操作都要在VS2019的命令行界面运行,这样保证工具不会找不到,我要编译64位所以使用了<b>x64 Native Tools Command Prompt for VS 2019</b></p>
-
 <p>还需要注意使用管理员权限执行命令</p>
 
 <br>
-<br>
+<hr>
 
 <h2>编译zlib</h2>
 
 <p>从github上下载源码,进入到源码目录下,执行</p>
-
-<xmp>
+<pre>
              nmake /f win32\Makefile.msc
-</xmp>
+</pre>
 
 <p>将生成的<b>lib dll exe</b>和头文件.h都拷贝到一个目录下以便使用</p>
 
 <br>
-<br>
-
+<hr>
 
 <h2>编译openssl</h2>
 
 <p>安装好<b>nasm</b>和<b>perl</b>后,设置一下两个程序的系统环境变量,然后执行</p>
-
-<xmp>
+<pre>
             perl Configure VC-WIN64A --prefix=D:\git-project\openssl\build 
             prefix是安装路径
             VC-WIN64A 是正常的 64 位版本,AMD 和英特尔 i 系列 x64 都用这个选项
-
 
             nmake  编译时间较长
 
             nmake test  这个就别执行了
 
             nmake install
-</xmp>
+</pre>
 
 <br>
-<br>
-
+<hr>
 
 <h2>编译libevent</h2>
 
 <p>用cmake就可以</p>
 
-<br>
-<br>
-<br>
 <br>
 
 </body>
