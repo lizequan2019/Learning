@@ -10,7 +10,7 @@
     p{
     text-indent: 2em; /*em是相对单位,2em即现在一个字大小的两倍*/
     }
- </style>
+</style>
 
 </head>
 <body>
@@ -19,84 +19,51 @@
 
 <p>如下代码,发现当ret < 0时,如果errno==EAGAIN就不算错误了,为什么<b>EAGAIN</b>就不算错误,是否还有其他错误也可以像<b>EAGAIN</b>一样?</p>
 <xmp>
-    ret = recv( connfd, users[connfd].buf, BUFFER_SIZE-1, 0 );
-    if( ret < 0 ){
-        if( errno != EAGAIN ){//读取数据发生错误进行的操作
-            close( connfd );
-            //后面的操作省略
-        }
-    }
-
-
+            ret = recv( connfd, users[connfd].buf, BUFFER_SIZE-1, 0 );
+            if( ret < 0 ){
+                if( errno != EAGAIN ){//读取数据发生错误进行的操作
+                    close( connfd );
+                    //后面的操作省略
+                }
+            }
 
 </xmp>
     
-
+<br>
+<hr>
     
 <h2>EAGAIN产生的原因</h2>
 
-<p>比如设置了异步socket,采用了write/send循环发发送大量的数据,由于是异步操作,write/send将发送的数据提交到缓冲区之后就会立即返回,并不需要对方确认(即等到数据真正发送给对方),这样就可能导致缓冲区被填满,即出现<b>Resource temporarily unavailable(资源暂时不可用)</b>的情况,产生EAGAIN错误码。</p>
-    
+<p>比如设置了异步socket,采用了write/send循环发送大量的数据,由于是异步操作,write/send将发送的数据提交到缓冲区之后就会立即返回,并不需要对方确认,这样就可能导致缓冲区被填满,即出现<b>Resource temporarily unavailable(资源暂时不可用)</b>的情况,产生EAGAIN错误码。</p>
     
 <p>同样采用异步操作,使用read/recv进行读数据的时候,同样可能产生EAGAIN错误码。如果一旦没有数据可读,由于是异步操作,read/recv函数并不会阻塞等待数据准备就绪返回,而是会立即返回,此时也会产生EAGAIN错误码。</p>
     
 <p>实际测试了,比如发送端一次发10w字节数据,而接收端一次接收10字节数据,很快发送端就会报EAGAIN错误。</p>
     
 <br>
-<br>
+<hr>
     
 <h2>EAGAIN为什么不算错误</h2>
 
 <p><b>对于异步操作</b>,EAGAIN并不能算是真正的错误,因为在正常的读写数据过程中就会出现,这个错误码表示读缓冲区为空/写缓冲区已满,只需要再次尝试即可。</p>
 
 <br>
-<br>
+<hr>
       
 <h2>还有没有其他和EAGAIN一样可以不算错误的错误码</h2>
 
 <p>还真有,EWOULDBLOCK,在如今大部分linux系统上,EWOULDBLOCK和EAGAIN的错误码值都是相同,但不排除极少的值不一样的操作系统。所以他俩可以认为是一种情况,处理方式也可以相同。</p>
 
-<xmp>
-    EAGAIN  "Resource temporarily unavailable."
-    The call might work if you try again later. The macro EWOULDBLOCK is another name for EAGAIN; they are always the same in the GNU C Library.
-    
-    EWOULDBLOCK  "Operation would block.""
-    In the GNU C Library, this is another name for EAGAIN (above). The values are always the same, on every operating system.
-</xmp>
+<pre>
+            <b>EAGAIN</b>  "Resource temporarily unavailable."
+            The call might work if you try again later. The macro EWOULDBLOCK is another name for EAGAIN; they are always the same in the GNU C Library.
+            
+            <b>EWOULDBLOCK</b>  "Operation would block.""
+            In the GNU C Library, this is another name for EAGAIN (above). The values are always the same, on every operating system.
+
+</pre>
 
 <p>还有一个EINTR,系统向程序发送这个信号的原因时,当进程在一个慢系统调用(slow system call)A中阻塞时,当捕获到某个信号且相应信号处理函数返回时,这个系统调用A不再阻塞而是被<b>中断</b>,就会调用返回错误(一般为-1)并且设置errno为EINTR。</p>
-    
-<br>
-<br>
- 
-<h2>如何处理</h2>
-    
-<xmp>
-    1. 重新尝试读取和写入,重试一定次数后还不成功就退出操作。
-
-     
-    2. 安装信号时设置SA_RESTART属性(该方法对有的系统调用无效)
-
-        struct sigaction action;  
-            
-        action.sa_handler = handler_func;  
-        sigemptyset(&action.sa_mask);  
-        action.sa_flags = 0;  
-        /* 设置SA_RESTART属性 */  
-        action.sa_flags |= SA_RESTART;  
-            
- 
-    3. 忽略信号(让系统不产生信号中断)
-
-        struct sigaction action;  
-            
-        action.sa_handler = SIG_IGN;  
-        sigemptyset(&action.sa_mask);  
-            
-        sigaction(SIGALRM, &action, NULL); 
-
-</xmp>
-
-    
+      
 </body>
 </html>
