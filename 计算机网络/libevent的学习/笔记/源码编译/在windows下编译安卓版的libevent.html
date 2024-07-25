@@ -20,7 +20,7 @@
 <p>android的环境参见笔记,<a href="../../../../QT/开发环境配置记录/win-qt安卓开发环境搭建/win-qt安卓开发环境搭建.html">【本地链接】win-qt安卓开发环境搭建</a></p>
 
 <br>
-<br>
+<hr>
 
 <h2>libevent源码编译</h2>
 
@@ -652,13 +652,10 @@
 
 
 <br>
-<br>
+<hr>
 
-
-<h3>编译</h3>
-
+<h2>编译</h2>
 <p>配置完后,开始进行编译,ndk-build.cmd路径根据实际情况修改</p>
-
 <xmp>
 
          编译
@@ -692,11 +689,10 @@
 </xmp>
 <p>在`\obj\local\arm64-v8a`目录下获得libevent.a</p>
 
-
 <br>
-<br>
+<hr>
 
-<h2>openssl源码编译</h2>
+<h2>带着openssl进行源码编译</h2>
 
 <a href="https://github.com/aluvalasuman/OpenSSL1.0.1cForAndroid">【网络链接】源码</a>
 
@@ -743,9 +739,6 @@
 
          LOCAL_CFLAGS += -pie -fPIE -static -fPIC
          include $(BUILD_STATIC_LIBRARY) 
-
-
-
 
 </xmp>
 
